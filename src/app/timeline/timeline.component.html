@@ -1,0 +1,204 @@
+<div class="timeline-wrapper">
+  <div class="logo-row">
+    <div class="logo">NAOLOGIC</div>
+  </div>
+  <div class="title-row">
+    <h2 class="title">Work Orders</h2>
+  </div>
+  <div class="timescale-card-row">
+    <div class="timescale-card">
+      <div class="timescale-label-wrapper">
+        <div class="timescale-label">Timescale</div>
+      </div>
+      <div class="timescale-select-wrapper">
+        <select 
+          class="timescale-select" 
+          [(ngModel)]="timescale" 
+          (ngModelChange)="onTimescaleChange()">
+          <option *ngFor="let option of timescaleOptions" [value]="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+        <svg class="timescale-select-icon" width="5" height="8.47" viewBox="0 0 9 6" xmlns="http://www.w3.org/2000/svg">
+          <path fill="currentColor" transform="matrix(1.19249e-08 -1 1 1.19249e-08 0 5)" d="M1.8564357 4.2863026C1.8564357 4.4239287 1.8977972 4.5583787 1.9751537 4.6722069L2.0297029 4.7524753L2.0297029 4.7524753L4.6055169 7.3499351C4.8099632 7.5560989 4.8092675 7.8887525 4.6039605 8.094059C4.3989043 8.2991152 4.0664425 8.2991152 3.8613861 8.094059L0.35355338 4.5862265C0.15829125 4.3909645 0.15829125 4.0743818 0.35355338 3.8791199L3.8551474 0.37752596C4.0646429 0.16803056 4.4034357 0.16525376 4.6163368 0.37128714L4.6163368 0.37128714L4.6163368 0.37128714C4.8247828 0.57300931 4.8302341 0.90551656 4.6285114 1.1139628C4.6265159 1.1160251 4.6245031 1.118071 4.6224742 1.1201003L2.0297029 3.7128713L2.0297029 3.7128713L1.9475787 3.8845534C1.887579 4.0099835 1.8564357 4.1472602 1.8564357 4.2863026Z" fill-rule="evenodd"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+  <!-- Timeline Grid -->
+  <div class="timeline-container">
+    <!-- Work Center Column -->
+    <div class="work-center-column" #workCenterColumn>
+      <!-- Logo Row -->
+      
+      
+      <!-- Title Row -->
+     
+      
+      
+      
+      <div class="work-center-header">Work Center</div>
+      <div class="work-center-rows-container">
+        <div 
+          *ngFor="let center of workCenters; let i = index" 
+          class="work-center-row"
+          [class.hovered]="hoveredWorkCenterIndex === i"
+          (mouseenter)="hoveredWorkCenterIndex = i"
+          (mouseleave)="hoveredWorkCenterIndex = null">
+          {{ center.data.name }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline Grid -->
+    <div 
+      #timelineGrid 
+      class="timeline-grid"
+      (scroll)="onTimelineScroll($event)">
+      
+      <!-- Vertical Grid Layer -->
+      <div class="timeline-grid-layer" [style.width.px]="getTotalTimelineWidth()">
+        <div 
+          *ngFor="let column of columns; let isLast = last" 
+          class="timeline-column-separator"
+          [style.left.px]="getColumnLeftPosition(column)"
+          [style.width.px]="1"
+          [style.display]="isLast ? 'none' : 'block'">
+        </div>
+      </div>
+
+      <!-- Date Headers -->
+      <div class="timeline-header-row">
+        <div 
+          *ngFor="let column of columns" 
+          class="timeline-column-header"
+          [style.width.px]="column.width">
+          <div class="column-label">{{ column.label }}</div>
+          <div 
+            *ngIf="isCurrentDateInColumn(column)" 
+            class="current-date-indicator"
+            [style.left.%]="getCurrentDateIndicatorPosition(column)">
+            <div class="current-date-label">{{ getCurrentDateLabel() }}</div>
+            <div class="current-date-line"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Work Center Rows with Work Orders -->
+      <div class="timeline-rows-container">
+        <div 
+          *ngFor="let center of workCenters; let i = index" 
+          class="timeline-row"
+          [class.hovered]="hoveredWorkCenterIndex === i"
+          (mouseenter)="hoveredWorkCenterIndex = i"
+          (mouseleave)="onTimelineRowMouseLeave()"
+          (mousemove)="onTimelineRowMouseMove($event, i)"
+          (mousedown)="onTimelineRowMouseDown($event, i)"
+          (click)="onTimelineClick($event, i)">
+          
+          <!-- Current Day Indicator Line -->
+          <ng-container *ngFor="let column of columns">
+            <div 
+              *ngIf="isCurrentDateInColumn(column)"
+              class="current-date-line-row"
+              [style.left.px]="calculateDatePosition(currentDate, columns[0].date)"
+              [style.width.px]="2">
+            </div>
+          </ng-container>
+          
+          <!-- Placeholder for empty area -->
+          <div 
+            *ngIf="hoveredTimelineCell?.workCenterIndex === i"
+            class="timeline-placeholder"
+            [style.left.px]="hoveredTimelineCell!.x"
+            [style.width.px]="getColumnWidth()">
+          </div>
+          
+          <!-- Work Order Bars -->
+          <div 
+            *ngFor="let bar of getBarsForWorkCenter(center.docId)"
+            class="work-order-bar"
+            [style.left.px]="bar.left"
+            [style.width.px]="bar.width"
+            [style.background-color]="getStatusColor(bar.order.data.status)"
+            (click)="onWorkOrderBarClick($event, bar)"
+            (mouseenter)="hoveredTimelineCell = null">
+            
+            <div class="work-order-content">
+              <span class="work-order-name">{{ bar.order.data.name }}</span>
+              <span class="work-order-status">{{ getStatusLabel(bar.order.data.status) }}</span>
+            </div>
+            
+            <button 
+              class="work-order-actions"
+              (click)="onActionsClick($event, bar.order)"
+              (click.stop)="true"
+              (mouseenter)="$event.stopPropagation()">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                <circle cx="6" cy="2" r="1.25"/>
+                <circle cx="6" cy="6" r="1.25"/>
+                <circle cx="6" cy="10" r="1.25"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Selection Overlay -->
+          <div 
+            *ngIf="selectionRange && selectionRange.workCenterIndex === i"
+            class="timeline-selection-overlay"
+            [style.left.px]="selectionRange.left"
+            [style.width.px]="selectionRange.width"
+            (click)="$event.stopPropagation()">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Selection Floating Menu -->
+  <div 
+    *ngIf="selectionRange" 
+    class="selection-menu"
+    [style.left.px]="getSelectionMenuLeft()"
+    [style.top.px]="getSelectionMenuTop()"
+    (click)="$event.stopPropagation()">
+    <button class="selection-menu-item" (click)="onSelectionCreate()">Create</button>
+    <button class="selection-menu-item" (click)="onSelectionEdit()">Edit</button>
+    <div class="selection-menu-caret"></div>
+  </div>
+
+  <!-- Actions Menu -->
+  <div 
+    *ngIf="showActionsMenu" 
+    class="actions-menu"
+    [style.left.px]="showActionsMenu.x"
+    [style.top.px]="showActionsMenu.y"
+    (click)="$event.stopPropagation()">
+    <button 
+      class="menu-item"
+      (click)="onEdit(getOrderById(showActionsMenu!.orderId))">
+      Edit
+    </button>
+    <button 
+      class="menu-item"
+      (click)="onDelete(getOrderById(showActionsMenu!.orderId))">
+      Delete
+    </button>
+  </div>
+
+  <!-- Click outside to close menu -->
+  <div 
+    *ngIf="showActionsMenu" 
+    class="actions-menu-overlay"
+    (click)="closeActionsMenu()">
+  </div>
+
+  <!-- Tooltip for empty timeline cells -->
+  <div 
+    *ngIf="hoveredTimelineCell" 
+    class="timeline-tooltip"
+    [style.left.px]="hoveredTimelineCell!.x + getColumnWidth() / 2"
+    [style.top.px]="hoveredTimelineCell!.y - 30">
+    Click to add work order
+  </div>
+</div>

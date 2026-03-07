@@ -1,0 +1,555 @@
+.panel-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+  align-items: stretch;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.panel {
+  width: 501px; // Updated from 300px to match Sketch exact value
+  min-height: 967px; // Added to match Sketch exact value
+  background: #ffffff;
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.25s ease-out;
+  max-height: 100vh;
+  overflow-y: auto;
+  border-radius: 0 0 0 4px; // Border-radius only on left corners (top-left and bottom-left)
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.panel-header {
+  padding: 20px 20px 0 20px; // Reduced padding for tighter spacing
+  flex-shrink: 0;
+  border-bottom: 1px solid #e5e7eb;
+
+  .panel-title {
+    font-size: 18px; // Slightly smaller
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 3px 0; // Tighter margin
+    line-height: 1.3;
+    letter-spacing: -0.1px;
+    padding-bottom: 10px; // Reduced padding
+  }
+
+  .panel-subtitle {
+    font-size: 11px; // Slightly smaller
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.4;
+    letter-spacing: 0;
+    font-weight: 400;
+    padding-bottom: 14px; // Reduced padding
+  }
+
+  .panel-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+    padding: 14px 0; // Reduced padding
+    border-bottom: 1px solid #e5e7eb;
+  }
+}
+
+.btn-cancel {
+  padding: 0; // Reset padding for text button
+  border-radius: 0;
+  font-family: "CircularStd-Book", "Circular-Std", sans-serif; // Updated to match Sketch exact value
+  font-size: 15px; // Updated from 12px to match Sketch exact value
+  font-weight: 400; // Updated from 600 to match Sketch exact value
+  letter-spacing: 0.33px; // Updated to match Sketch exact value
+  color: rgba(47, 48, 89, 1); // Updated from #6b7280 to match Sketch exact value
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  transition: all 0.2s ease;
+  line-height: 1.4;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+
+  &:hover {
+    color: rgba(47, 48, 89, 1);
+    background: transparent;
+  }
+}
+
+.btn-save {
+  width: 66px; // Updated to match Sketch exact value
+  height: 32px; // Already correct
+  padding: 0;
+  border-radius: 7px; // Updated from 4px to match Sketch exact value
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: rgba(86, 89, 255, 1); // Updated from #3E40DB to match Sketch exact value
+  box-shadow: 
+    0 0 0 1px rgba(86, 89, 255, 1),
+    0 1px 3px 0 rgba(200, 207, 233, 1); // Updated to match Sketch exact value
+  transition: all 0.2s ease;
+  font-family: "Circular-Std", sans-serif;
+  line-height: 1.4;
+  letter-spacing: 0;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover:not(:disabled) {
+    background: rgba(86, 89, 255, 1);
+    box-shadow: 
+      0 0 0 1px rgba(86, 89, 255, 1),
+      0 2px 4px 0 rgba(200, 207, 233, 1); // Slightly stronger on hover
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.panel-form {
+  padding: 20px; // Reduced padding
+  display: flex;
+  flex-direction: column;
+  gap: 14px; // Slightly tighter gap
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px; // Tighter gap between label and input
+}
+
+.form-label {
+  font-size: 11px; // Slightly smaller
+  font-weight: 600;
+  color: #374151;
+  letter-spacing: 0;
+  text-transform: none;
+  margin-bottom: 0;
+}
+
+.form-input {
+  padding: 7px 11px;
+  border: none; // Removed border, using box-shadow instead
+  border-radius: 5px; // Updated from 4px to match Sketch exact value
+  font-size: 12px;
+  color: #111827;
+  font-family: "Circular-Std", sans-serif;
+  background: rgba(255, 255, 255, 1); // Updated to match Sketch exact value
+  box-shadow: 
+    0 0 0 1px rgba(216, 220, 235, 1),
+    0 1.5px 3px -1.5px rgba(200, 207, 233, 1),
+    0 1px 0.5px -1px rgba(216, 220, 235, 1); // Updated to match Sketch exact value
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  line-height: 1.4;
+  width: 100%;
+  box-sizing: border-box;
+  height: 38px; // Updated from 36px to match Sketch exact value
+
+  &:focus {
+    outline: none;
+    box-shadow: 
+      0 0 0 1px rgba(216, 220, 235, 1),
+      0 1.5px 3px -1.5px rgba(200, 207, 233, 1),
+      0 1px 0.5px -1px rgba(216, 220, 235, 1),
+      0 0 0 2px rgba(59, 130, 246, 0.1); // Added focus ring
+  }
+
+  &.error {
+    box-shadow: 
+      0 0 0 1px rgba(239, 68, 68, 1),
+      0 1.5px 3px -1.5px rgba(200, 207, 233, 1),
+      0 1px 0.5px -1px rgba(216, 220, 235, 1);
+  }
+
+  &::placeholder {
+    color: #9ca3af;
+  }
+}
+
+.date-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.date-input {
+  width: 100%;
+  padding-right: 40px; // Space for calendar icon button
+}
+
+.datepicker-toggle {
+  position: absolute;
+  right: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  z-index: 1;
+
+  &:hover {
+    background: #f3f4f6;
+    color: #111827;
+  }
+
+  svg {
+    display: block;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+::ng-deep {
+  .ng-select {
+    .ng-select-container {
+      border: none; // Removed border, using box-shadow instead
+      border-radius: 5px; // Updated from 4px to match Sketch exact value
+      min-height: 38px; // Updated from 36px to match Sketch exact value
+      height: 38px;
+      background: rgba(255, 255, 255, 1); // Updated to match Sketch exact value
+      box-shadow: 
+        0 0 0 1px rgba(216, 220, 235, 1),
+        0 1.5px 3px -1.5px rgba(200, 207, 233, 1),
+        0 1px 0.5px -1px rgba(216, 220, 235, 1); // Updated to match Sketch exact value
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+      &:hover {
+        box-shadow: 
+          0 0 0 1px rgba(216, 220, 235, 1),
+          0 1.5px 3px -1.5px rgba(200, 207, 233, 1),
+          0 1px 0.5px -1px rgba(216, 220, 235, 1);
+        background: rgba(255, 255, 255, 1);
+      }
+
+      &.ng-select-focused {
+        box-shadow: 
+          0 0 0 1px rgba(216, 220, 235, 1),
+          0 1.5px 3px -1.5px rgba(200, 207, 233, 1),
+          0 1px 0.5px -1px rgba(216, 220, 235, 1),
+          0 0 0 2px rgba(59, 130, 246, 0.1); // Added focus ring
+        background: rgba(255, 255, 255, 1);
+      }
+
+      &.error {
+        box-shadow: 
+          0 0 0 1px rgba(239, 68, 68, 1),
+          0 1.5px 3px -1.5px rgba(200, 207, 233, 1),
+          0 1px 0.5px -1px rgba(216, 220, 235, 1);
+        background: rgba(255, 255, 255, 1);
+      }
+    }
+
+    .ng-value-container {
+      padding: 7px 11px;
+      background: rgba(255, 255, 255, 1);
+      min-height: 38px; // Updated from 36px to match Sketch exact value
+    }
+
+    .ng-value {
+      font-size: 12px; // Match input font size
+      color: #111827;
+      line-height: 1.4;
+
+      .status-option {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 500;
+        color: #ffffff;
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+      }
+    }
+
+    .ng-arrow-wrapper {
+      padding-right: 8px;
+      width: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .ng-arrow {
+      // Hide default arrow
+      border: none;
+      width: 0;
+      height: 0;
+      opacity: 0;
+    }
+
+    // Custom SVG icon for dropdown
+    .ng-arrow-wrapper::after {
+      content: '';
+      position: absolute;
+      width: 5px;
+      height: 8.47px;
+      background-color: rgba(200, 207, 233, 1);
+      mask-image: url('/assets/icons/Down.svg');
+      mask-size: contain;
+      mask-repeat: no-repeat;
+      mask-position: center;
+      -webkit-mask-image: url('/assets/icons/Down.svg');
+      -webkit-mask-size: contain;
+      -webkit-mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+      border-radius: 2px;
+      transform: rotate(270deg);
+    }
+  }
+
+  .ng-dropdown-panel {
+    border: 1px solid #E5E7EB; // Updated from #d1d5db to match Sketch (#E5E7EB)
+    border-radius: 4px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+    margin-top: 3px;
+    background: #ffffff;
+    overflow: hidden;
+
+    .ng-option {
+      padding: 6px 10px; // Tighter padding
+      font-size: 12px; // Match input font size
+      color: #111827;
+      background: #ffffff;
+      transition: background-color 0.15s ease;
+
+      &.ng-option-selected {
+        background: #eff6ff;
+        color: #1e40af;
+        font-weight: 500;
+      }
+
+      &.ng-option-highlighted {
+        background: #f3f4f6;
+      }
+    }
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #ffffff;
+  }
+
+  .ng-value {
+    .status-badge {
+      display: inline-block;
+    }
+
+    .status-option {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #ffffff;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  .ng-option {
+    .status-badge {
+      display: inline-block;
+    }
+
+    .status-option {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #ffffff;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  .ngb-datepicker {
+    border: 1px solid #E5E7EB;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    margin-top: 3px;
+    background: #ffffff;
+    font-family: "Circular-Std", sans-serif;
+    overflow: hidden;
+    width: auto; // Changed from 100% to auto for popup mode
+
+    .ngb-dp-header {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 7px 9px; // Tighter padding
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .ngb-dp-month-name {
+      font-size: 11px; // Slightly smaller
+      font-weight: 600;
+      color: #111827;
+      letter-spacing: 0;
+      margin: 0;
+    }
+
+    .ngb-dp-arrow {
+      .btn-link {
+        color: #6b7280;
+        font-size: 10px; // Slightly smaller
+        padding: 2px 3px; // Tighter padding
+        border-radius: 2px;
+        transition: all 0.15s ease;
+        border: none;
+        background: transparent;
+        line-height: 1;
+        width: 20px; // Slightly smaller
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+
+        &:hover {
+          background: #f3f4f6;
+          color: #111827;
+        }
+
+        &:focus {
+          outline: none;
+          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        .ngb-dp-navigation-chevron {
+          width: 8px; // Slightly smaller
+          height: 8px;
+        }
+      }
+    }
+
+    .ngb-dp-weekdays {
+      background: #f9fafb;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 3px 0; // Tighter padding
+    }
+
+    .ngb-dp-weekday {
+      font-size: 8px; // Slightly smaller
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      padding: 2px 0;
+      width: 30px; // Slightly narrower
+      text-align: center;
+    }
+
+    .ngb-dp-week {
+      margin: 0;
+      padding: 1px 0;
+    }
+
+    .ngb-dp-day {
+      padding: 1px;
+      width: 30px; // Match weekday width
+
+      .btn-light {
+        border: none;
+        border-radius: 2px;
+        font-size: 10px; // Slightly smaller
+        color: #111827;
+        width: 26px; // Slightly smaller
+        height: 26px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s ease;
+        font-weight: 400;
+        background: transparent;
+        font-family: "Circular-Std", sans-serif;
+
+        &:hover:not(.disabled):not(.active):not(.bg-primary) {
+          background: #f3f4f6;
+          color: #111827;
+        }
+
+        &.active,
+        &.bg-primary {
+          background: #3b82f6 !important;
+          color: #ffffff !important;
+          font-weight: 600;
+        }
+
+        &.text-muted {
+          color: #9ca3af;
+        }
+
+        &.disabled {
+          opacity: 0.25;
+          cursor: not-allowed;
+        }
+      }
+    }
+
+    .ngb-dp-months {
+      padding: 3px; // Tighter padding
+    }
+  }
+}
+
+.error-message {
+  font-size: 12px;
+  color: #ef4444;
+  margin-top: 2px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.overlap-error {
+  padding: 8px 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  color: #dc2626;
+  font-size: 12px;
+  margin-top: 0;
+  font-weight: 400;
+  line-height: 1.4;
+}

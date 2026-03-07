@@ -1,1 +1,117 @@
-/* You can add global styles to this file, and also import other style files */
+/* Global Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  font-family: "Circular-Std", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
+  color: rgba(104, 113, 150, 1);
+}
+
+/* Bootstrap overrides for ng-bootstrap */
+@import 'bootstrap/scss/bootstrap';
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+
+  &:hover {
+    background: #a8a8a8;
+  }
+}
+
+/* Global select styles to remove default browser styling */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: none;
+  
+  &::-ms-expand {
+    display: none;
+  }
+  
+  // Attempt to style dropdown options and remove blue hover
+  // Note: Browser limitations prevent full control over native select dropdowns
+  // The dropdown appearance is mostly controlled by the OS/browser
+  option {
+    background-color: rgba(255, 255, 255, 1) !important;
+    background: rgba(255, 255, 255, 1) !important;
+    color: #000000 !important;
+    padding: 6px 8px !important;
+    font-size: 13px !important;
+    font-family: "CircularStd-Medium", "Circular-Std", sans-serif !important;
+    font-weight: 500 !important;
+    
+    // Try to override browser default hover (limited support)
+    // Most browsers ignore these styles due to OS-level control
+    &:hover,
+    &:focus,
+    &:active {
+      background-color: rgba(255, 255, 255, 1) !important;
+      background: rgba(255, 255, 255, 1) !important;
+      color: #000000 !important;
+      outline: none !important;
+    }
+    
+    &:checked,
+    &[selected] {
+      background-color: rgba(255, 255, 255, 1) !important;
+      background: rgba(255, 255, 255, 1) !important;
+      color: rgba(62, 64, 219, 1) !important;
+      font-weight: 500 !important;
+    }
+  }
+}
+
+/* Additional attempt to remove blue hover on select options */
+/* Note: This may not work in all browsers due to OS-level control of native dropdowns */
+/* Native select dropdowns are rendered by the OS, not the browser, so styling is very limited */
+select option:hover,
+select option:focus,
+select option:active {
+  background-color: rgba(255, 255, 255, 1) !important;
+  background: rgba(255, 255, 255, 1) !important;
+  color: #000000 !important;
+}
+
+/* For timescale select specifically - attempt to style dropdown */
+.timescale-select option {
+  background-color: rgba(255, 255, 255, 1) !important;
+  background: rgba(255, 255, 255, 1) !important;
+  color: #000000 !important;
+  padding: 6px 8px !important;
+  font-size: 13px !important;
+  font-family: "CircularStd-Medium", "Circular-Std", sans-serif !important;
+  font-weight: 500 !important;
+}
+
+.timescale-select option:checked,
+.timescale-select option[selected] {
+  background-color: rgba(255, 255, 255, 1) !important;
+  background: rgba(255, 255, 255, 1) !important;
+  color: rgba(62, 64, 219, 1) !important;
+  font-weight: 500 !important;
+}
