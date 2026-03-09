@@ -1,16 +1,26 @@
+<!-- @upgrade: Add ARIA attributes for accessibility:
+     - aria-modal="true" on panel
+     - aria-labelledby pointing to panel title
+     - aria-describedby for form description
+     - role="dialog" on panel
+     - Proper focus trap and return focus on close -->
 <div class="panel-overlay" *ngIf="isOpen" (click)="onClose()">
   <div class="panel" (click)="$event.stopPropagation()">
     <div class="panel-header">
-      <h2 class="panel-title">Work Order Details</h2>
-      <p class="panel-subtitle">Specify the dates, name and status for this order</p>
-      <div class="panel-actions">
-        <button class="btn-cancel" (click)="onClose()">Cancel</button>
-        <button 
-          class="btn-save" 
-          (click)="onSubmit()"
-          [disabled]="workOrderForm.invalid">
-          {{ mode === 'create' ? 'Create' : 'Save' }}
-        </button>
+      <div class="panel-header-content">
+        <div class="panel-header-text">
+          <h2 class="panel-title">Work Order Details</h2>
+          <p class="panel-subtitle">Specify the dates, name and status for this order</p>
+        </div>
+        <div class="panel-header-actions">
+          <button class="btn-cancel" (click)="onClose()">Cancel</button>
+          <button 
+            class="btn-save" 
+            (click)="onSubmit()"
+            [disabled]="workOrderForm.invalid">
+            {{ mode === 'create' ? 'Create' : 'Save' }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -20,7 +30,7 @@
         <label class="form-label">Work Order Name</label>
         <input 
           type="text" 
-          class="form-input"
+          class="form-input name-input"
           formControlName="name"
           placeholder="Acme Inc."
           [class.error]="workOrderForm.get('name')?.invalid && workOrderForm.get('name')?.touched">
@@ -39,7 +49,19 @@
           [items]="statusOptions"
           bindValue="value"
           bindLabel="label"
-          [class.error]="workOrderForm.get('status')?.invalid && workOrderForm.get('status')?.touched">
+          [clearable]="false"
+          [searchable]="true"
+          [class.error]="workOrderForm.get('status')?.invalid && workOrderForm.get('status')?.touched"
+          [class.status-focused]="isStatusSelectFocused"
+          #statusSelect>
+          <ng-template ng-label-tmp let-item="item">
+            <span 
+              class="status-badge-label"
+              [style.color]="getStatusTextColor(item.value)"
+              [style.background-color]="getStatusBackgroundColor(item.value)">
+              {{ item.label }}
+            </span>
+          </ng-template>
         </ng-select>
         <div 
           *ngIf="workOrderForm.get('status')?.invalid && workOrderForm.get('status')?.touched" 
@@ -49,7 +71,7 @@
       </div>
 
       <!-- Work Center -->
-      <div class="form-group">
+      <!-- <div class="form-group">
         <label class="form-label">Work Center</label>
         <ng-select
           formControlName="workCenterId"
@@ -63,31 +85,21 @@
           class="error-message">
           Work center is required
         </div>
-      </div>
+      </div> -->
 
       <!-- Start Date -->
       <div class="form-group">
         <label class="form-label">Start date</label>
-        <div class="date-input-wrapper">
-          <input
-            class="form-input date-input"
-            [ngModel]="workOrderForm.get('startDate')?.value"
-            (ngModelChange)="onStartDateModelChange($event)"
-            ngbDatepicker
-            #startDatePicker="ngbDatepicker"
-            (dateSelect)="onStartDateSelect($event)"
-            [class.error]="workOrderForm.get('startDate')?.invalid && workOrderForm.get('startDate')?.touched"
-            readonly>
-          <button
-            type="button"
-            class="datepicker-toggle"
-            (click)="startDatePicker.toggle()"
-            tabindex="-1">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12.6667 2H12V1.33333C12 1.14924 11.8508 1 11.6667 1C11.4826 1 11.3333 1.14924 11.3333 1.33333V2H4.66667V1.33333C4.66667 1.14924 4.51743 1 4.33333 1C4.14924 1 4 1.14924 4 1.33333V2H3.33333C2.59695 2 2 2.59695 2 3.33333V13.3333C2 14.0697 2.59695 14.6667 3.33333 14.6667H12.6667C13.403 14.6667 14 14.0697 14 13.3333V3.33333C14 2.59695 13.403 2 12.6667 2ZM12.6667 13.3333H3.33333V6H12.6667V13.3333Z" fill="currentColor"/>
-            </svg>
-          </button>
-        </div>
+        <!-- @upgrade: Consider inline datepicker or calendar view for better date selection UX.
+             Could show month view inline, allow keyboard navigation, and provide date range validation feedback. -->
+        <input
+        class="form-input date-input"
+        formControlName="startDate"
+        ngbDatepicker
+        #startDatePicker="ngbDatepicker"
+        (click)="startDatePicker.toggle()"
+        readonly
+      />
         <div 
           *ngIf="workOrderForm.get('startDate')?.invalid && workOrderForm.get('startDate')?.touched" 
           class="error-message">
@@ -98,26 +110,14 @@
       <!-- End Date -->
       <div class="form-group">
         <label class="form-label">End date</label>
-        <div class="date-input-wrapper">
-          <input
-            class="form-input date-input"
-            [ngModel]="workOrderForm.get('endDate')?.value"
-            (ngModelChange)="onEndDateModelChange($event)"
-            ngbDatepicker
-            #endDatePicker="ngbDatepicker"
-            (dateSelect)="onEndDateSelect($event)"
-            [class.error]="workOrderForm.get('endDate')?.invalid && workOrderForm.get('endDate')?.touched"
-            readonly>
-          <button
-            type="button"
-            class="datepicker-toggle"
-            (click)="endDatePicker.toggle()"
-            tabindex="-1">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12.6667 2H12V1.33333C12 1.14924 11.8508 1 11.6667 1C11.4826 1 11.3333 1.14924 11.3333 1.33333V2H4.66667V1.33333C4.66667 1.14924 4.51743 1 4.33333 1C4.14924 1 4 1.14924 4 1.33333V2H3.33333C2.59695 2 2 2.59695 2 3.33333V13.3333C2 14.0697 2.59695 14.6667 3.33333 14.6667H12.6667C13.403 14.6667 14 14.0697 14 13.3333V3.33333C14 2.59695 13.403 2 12.6667 2ZM12.6667 13.3333H3.33333V6H12.6667V13.3333Z" fill="currentColor"/>
-            </svg>
-          </button>
-        </div>
+        <input
+        class="form-input date-input"
+        formControlName="endDate"
+        ngbDatepicker
+        #endDatePicker="ngbDatepicker"
+        (click)="endDatePicker.toggle()"
+        readonly
+      />
         <div 
           *ngIf="workOrderForm.get('endDate')?.invalid && workOrderForm.get('endDate')?.touched" 
           class="error-message">

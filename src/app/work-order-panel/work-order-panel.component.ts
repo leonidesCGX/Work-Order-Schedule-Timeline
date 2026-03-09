@@ -1,11 +1,39 @@
-import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges, HostListener } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges, HostListener, ChangeDetectorRef, ViewChild, ElementRef, Injectable, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormControl, Validators, ReactiveFormsModule } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
-import { NgbDatepickerModule, NgbDateStruct } from '@ng-bootstrap/ng-bootstrap';
+import { NgbDatepickerModule, NgbDateStruct, NgbDateParserFormatter } from '@ng-bootstrap/ng-bootstrap';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { WorkOrderService } from '../services/work-order.service';
 import { WorkOrderDocument, WorkOrderStatus } from '../models/work-order.model';
+
+// Custom date parser formatter for MM-DD-YYYY format
+@Injectable()
+export class CustomDateParserFormatter extends NgbDateParserFormatter {
+
+  parse(value: string): NgbDateStruct | null {
+    if (!value) return null;
+
+    const parts = value.split('-');
+    if (parts.length !== 3) return null;
+
+    return {
+      month: +parts[0],
+      day: +parts[1],
+      year: +parts[2]
+    };
+  }
+
+  format(date: NgbDateStruct | null): string {
+    if (!date) return '';
+
+    const mm = String(date.month).padStart(2, '0');
+    const dd = String(date.day).padStart(2, '0');
+    const yyyy = date.year;
+
+    return `${mm}-${dd}-${yyyy}`;
+  }
+}
 
 @Component({
   selector: 'app-work-order-panel',
@@ -17,10 +45,13 @@ import { WorkOrderDocument, WorkOrderStatus } from '../models/work-order.model';
     NgbDatepickerModule,
     NgSelectModule
   ],
+  providers: [
+    { provide: NgbDateParserFormatter, useClass: CustomDateParserFormatter }
+  ],
   templateUrl: './work-order-panel.component.html',
   styleUrl: './work-order-panel.component.scss'
 })
-export class WorkOrderPanelComponent implements OnInit, OnChanges {
+export class WorkOrderPanelComponent implements OnInit, OnChanges, AfterViewInit {
   @Input() isOpen: boolean = false;
   @Input() mode: 'create' | 'edit' = 'create';
   @Input() workCenterId: string = '';
@@ -31,8 +62,13 @@ export class WorkOrderPanelComponent implements OnInit, OnChanges {
   @Output() close = new EventEmitter<void>();
   @Output() save = new EventEmitter<WorkOrderDocument>();
 
+  @ViewChild('startDateInput', { static: false }) startDateInputRef?: ElementRef<HTMLInputElement>;
+  @ViewChild('endDateInput', { static: false }) endDateInputRef?: ElementRef<HTMLInputElement>;
+  @ViewChild('statusSelect', { static: false }) statusSelectRef?: any;
+
   workOrderForm!: FormGroup;
   overlapError: string = '';
+  isStatusSelectFocused: boolean = false;
 
   statusOptions: { value: WorkOrderStatus; label: string }[] = [
     { value: 'open', label: 'Open' },
@@ -43,13 +79,31 @@ export class WorkOrderPanelComponent implements OnInit, OnChanges {
 
   constructor(
     private fb: FormBuilder,
-    private workOrderService: WorkOrderService
+    private workOrderService: WorkOrderService,
+    private dateParserFormatter: NgbDateParserFormatter
   ) {
     this.initForm();
   }
 
   ngOnInit(): void {
     this.initForm();
+  }
+
+  ngAfterViewInit(): void {
+    // Listen for focus events on the ng-select input
+    setTimeout(() => {
+      if (this.statusSelectRef) {
+        const inputElement = this.statusSelectRef.element?.querySelector('input');
+        if (inputElement) {
+          inputElement.addEventListener('focus', () => {
+            this.isStatusSelectFocused = true;
+          });
+          inputElement.addEventListener('blur', () => {
+            this.isStatusSelectFocused = false;
+          });
+        }
+      }
+    }, 0);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -147,6 +201,9 @@ export class WorkOrderPanelComponent implements OnInit, OnChanges {
     });
   }
 
+  // @upgrade: Add smooth slide-in/slide-out animations for panel.
+  // Consider CSS transitions or Angular animations API for polished entrance/exit effects.
+  // Could add backdrop fade-in animation and panel slide from right with easing.
   onClose(): void {
     this.close.emit();
   }
@@ -165,12 +222,16 @@ export class WorkOrderPanelComponent implements OnInit, OnChanges {
     const startDate = this.ngbDateToDate(formValue.startDate);
     const endDate = this.ngbDateToDate(formValue.endDate);
 
+    // Format dates to ISO string without timezone issues
+    const startDateStr = this.dateToISOString(startDate);
+    const endDateStr = this.dateToISOString(endDate);
+
     // Check for overlap
     const excludeDocId = this.mode === 'edit' ? this.workOrder?.docId : undefined;
     const hasOverlap = this.workOrderService.checkOverlap(
       formValue.workCenterId,
-      startDate.toISOString().split('T')[0],
-      endDate.toISOString().split('T')[0],
+      startDateStr,
+      endDateStr,
       excludeDocId
     );
 
@@ -188,8 +249,8 @@ export class WorkOrderPanelComponent implements OnInit, OnChanges {
           name: formValue.name as string,
           workCenterId: formValue.workCenterId as string,
           status: formValue.status as WorkOrderStatus,
-          startDate: startDate.toISOString().split('T')[0],
-          endDate: endDate.toISOString().split('T')[0]
+          startDate: startDateStr,
+          endDate: endDateStr
         }
       };
       const created = this.workOrderService.createWorkOrder(newOrder);
@@ -199,8 +260,8 @@ export class WorkOrderPanelComponent implements OnInit, OnChanges {
         name: formValue.name as string,
         workCenterId: formValue.workCenterId as string,
         status: formValue.status as WorkOrderStatus,
-        startDate: startDate.toISOString().split('T')[0],
-        endDate: endDate.toISOString().split('T')[0]
+        startDate: startDateStr,
+        endDate: endDateStr
       });
       const updated = this.workOrderService.getWorkOrderById(this.workOrder.docId);
       if (updated) {
@@ -236,12 +297,27 @@ export class WorkOrderPanelComponent implements OnInit, OnChanges {
   /**
    * Converts an NgbDateStruct to a JavaScript Date object.
    * Note: NgbDateStruct uses 1-based months, so we subtract 1 when creating Date.
+   * Sets time to noon to avoid timezone issues when converting to ISO string.
    * 
    * @param ngbDate - NgbDateStruct from ngb-datepicker
    * @returns JavaScript Date object
    */
   private ngbDateToDate(ngbDate: NgbDateStruct): Date {
-    return new Date(ngbDate.year, ngbDate.month - 1, ngbDate.day); // Convert 1-based to 0-based
+    // Use noon to avoid timezone issues when converting to ISO string
+    return new Date(ngbDate.year, ngbDate.month - 1, ngbDate.day, 12, 0, 0, 0);
+  }
+
+  /**
+   * Formats a Date to ISO string (YYYY-MM-DD) without timezone issues.
+   * 
+   * @param date - JavaScript Date object
+   * @returns ISO date string in format YYYY-MM-DD
+   */
+  private dateToISOString(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   getStatusColor(status: WorkOrderStatus): string {
@@ -259,31 +335,88 @@ export class WorkOrderPanelComponent implements OnInit, OnChanges {
     }
   }
 
+  getStatusTextColor(status: string): string {
+    switch (status) {
+      case 'in-progress':
+        return 'rgba(62, 64, 219, 1)';
+      case 'complete':
+        return 'rgba(8, 162, 104, 1)';
+      case 'blocked':
+        return 'rgba(177, 54, 0, 1)';
+      case 'open':
+        return 'rgba(0, 176, 191, 1)';
+      default:
+        return 'rgba(0, 176, 191, 1)'; // Default to open color
+    }
+  }
+
+  getStatusBackgroundColor(status: string): string {
+    switch (status) {
+      case 'in-progress':
+        return 'rgba(214, 216, 255, 1)';
+      case 'complete':
+        return 'rgba(225, 255, 204, 1)';
+      case 'blocked':
+        return 'rgba(252, 238, 181, 1)';
+      case 'open':
+        return 'rgba(228, 253, 255, 1)';
+      default:
+        return 'rgba(228, 253, 255, 1)'; // Default to open background
+    }
+  }
+
+  getStatusLabel(status: string): string {
+    switch (status) {
+      case 'open':
+        return 'Open';
+      case 'in-progress':
+        return 'In progress';
+      case 'complete':
+        return 'Complete';
+      case 'blocked':
+        return 'Blocked';
+      default:
+        return status;
+    }
+  }
+
   onStartDateSelect(date: NgbDateStruct): void {
     this.workOrderForm.patchValue({ startDate: date });
     // Re-validate end date
     this.workOrderForm.get('endDate')?.updateValueAndValidity();
+    // Force update the input display with formatted value immediately and after datepicker updates
+    const formatted = this.dateParserFormatter.format(date);
+    requestAnimationFrame(() => {
+      if (this.startDateInputRef) {
+        this.startDateInputRef.nativeElement.value = formatted;
+      }
+      // Also update after a short delay to override datepicker's default format
+      setTimeout(() => {
+        if (this.startDateInputRef) {
+          this.startDateInputRef.nativeElement.value = formatted;
+        }
+      }, 10);
+    });
   }
 
   onEndDateSelect(date: NgbDateStruct): void {
     this.workOrderForm.patchValue({ endDate: date });
+    // Force update the input display with formatted value immediately and after datepicker updates
+    const formatted = this.dateParserFormatter.format(date);
+    requestAnimationFrame(() => {
+      if (this.endDateInputRef) {
+        this.endDateInputRef.nativeElement.value = formatted;
+      }
+      // Also update after a short delay to override datepicker's default format
+      setTimeout(() => {
+        if (this.endDateInputRef) {
+          this.endDateInputRef.nativeElement.value = formatted;
+        }
+      }, 10);
+    });
   }
 
-  onStartDateModelChange(value: NgbDateStruct | null): void {
-    // Sync ngModel value with form control
-    if (value) {
-      this.workOrderForm.patchValue({ startDate: value }, { emitEvent: false });
-      // Re-validate end date
-      this.workOrderForm.get('endDate')?.updateValueAndValidity();
-    }
-  }
 
-  onEndDateModelChange(value: NgbDateStruct | null): void {
-    // Sync ngModel value with form control
-    if (value) {
-      this.workOrderForm.patchValue({ endDate: value }, { emitEvent: false });
-    }
-  }
 
   formatDate(ngbDate: NgbDateStruct | null): string {
     if (!ngbDate) return '';
@@ -294,13 +427,6 @@ export class WorkOrderPanelComponent implements OnInit, OnChanges {
     return `${day}.${month}.${year}`;
   }
 
-  /**
-   * Formats NgbDateStruct for display in input field
-   */
-  getDateDisplayValue(ngbDate: NgbDateStruct | null): string {
-    if (!ngbDate) return '';
-    return this.formatDate(ngbDate);
-  }
 
 
   get workCenters() {
@@ -312,7 +438,7 @@ export class WorkOrderPanelComponent implements OnInit, OnChanges {
   }
 
   @HostListener('document:keydown.escape', ['$event'])
-  onEscapeKey(event: KeyboardEvent): void {
+  onEscapeKey(_event: Event): void {
     if (this.isOpen) {
       this.onClose();
     }

@@ -22,8 +22,8 @@
 }
 
 .panel {
-  width: 501px; // Updated from 300px to match Sketch exact value
-  min-height: 967px; // Added to match Sketch exact value
+  width: 591px;
+  min-height: 1024px;
   background: #ffffff;
   box-shadow: -4px 0 16px rgba(0, 0, 0, 0.08);
   display: flex;
@@ -44,83 +44,119 @@
 }
 
 .panel-header {
-  padding: 20px 20px 0 20px; // Reduced padding for tighter spacing
   flex-shrink: 0;
   border-bottom: 1px solid #e5e7eb;
+  padding-right: 34px;
+  padding-bottom: 8px;
+  min-height: 73px;
+  box-sizing: border-box;
+
+  .panel-header-content {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .panel-header-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .panel-header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-shrink: 0;
+    margin-top: 25px;
+  }
 
   .panel-title {
-    font-size: 18px; // Slightly smaller
-    font-weight: 700;
-    color: #111827;
-    margin: 0 0 3px 0; // Tighter margin
+    margin: 0;
+    margin-top: 16px;
+    margin-left: 24px;
+    width: 253px;
+    height: 25px;
+    color: rgba(47, 48, 89, 1);
+    font-family: "CircularStd-Medium", "Circular-Std", sans-serif;
+    font-size: 20px;
+    font-weight: 500;
+    font-style: normal;
     line-height: 1.3;
     letter-spacing: -0.1px;
-    padding-bottom: 10px; // Reduced padding
   }
 
   .panel-subtitle {
-    font-size: 11px; // Slightly smaller
-    color: #6b7280;
     margin: 0;
+    margin-top: 5px;
+    margin-bottom: 16px;
+    margin-left: 23px;
+    width: 352px;
+    height: 20px;
+    color: rgba(104, 113, 150, 1);
+    font-family: "CircularStd-Book", "Circular-Std", sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    font-style: normal;
     line-height: 1.4;
     letter-spacing: 0;
-    font-weight: 400;
-    padding-bottom: 14px; // Reduced padding
-  }
-
-  .panel-actions {
-    display: flex;
-    gap: 6px;
-    justify-content: flex-end;
-    padding: 14px 0; // Reduced padding
-    border-bottom: 1px solid #e5e7eb;
   }
 }
 
 .btn-cancel {
-  padding: 0; // Reset padding for text button
-  border-radius: 0;
-  font-family: "CircularStd-Book", "Circular-Std", sans-serif; // Updated to match Sketch exact value
-  font-size: 15px; // Updated from 12px to match Sketch exact value
-  font-weight: 400; // Updated from 600 to match Sketch exact value
-  letter-spacing: 0.33px; // Updated to match Sketch exact value
-  color: rgba(47, 48, 89, 1); // Updated from #6b7280 to match Sketch exact value
+  width: 66px;
+  height: 32px;
+  padding: 6.5px 8px;
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 1),
+    0 1px 3px 0 rgba(200, 207, 233, 1);
+  border-radius: 7px;
+  background-color: rgba(255, 255, 255, 1);
+  color: rgba(47, 48, 89, 1);
+  font-family: "CircularStd-Book", "Circular-Std", sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  font-style: normal;
+  letter-spacing: 0.33px;
   cursor: pointer;
   border: none;
-  background: transparent;
   transition: all 0.2s ease;
-  line-height: 1.4;
-  height: 32px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 
   &:hover {
     color: rgba(47, 48, 89, 1);
-    background: transparent;
+    background-color: rgba(255, 255, 255, 1);
   }
 }
 
 .btn-save {
-  width: 66px; // Updated to match Sketch exact value
-  height: 32px; // Already correct
-  padding: 0;
-  border-radius: 7px; // Updated from 4px to match Sketch exact value
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-  background: rgba(86, 89, 255, 1); // Updated from #3E40DB to match Sketch exact value
+  width: 66px;
+  height: 32px;
+  padding: 6.5px 10px;
   box-shadow: 
     0 0 0 1px rgba(86, 89, 255, 1),
-    0 1px 3px 0 rgba(200, 207, 233, 1); // Updated to match Sketch exact value
+    0 1px 3px 0 rgba(200, 207, 233, 1);
+  border-radius: 7px;
+  background-color: rgba(86, 89, 255, 1);
+  color: rgba(255, 255, 255, 1);
+  font-family: "CircularStd-Book", "Circular-Std", sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  font-style: normal;
+  cursor: pointer;
+  border: none;
   transition: all 0.2s ease;
-  font-family: "Circular-Std", sans-serif;
-  line-height: 1.4;
-  letter-spacing: 0;
-  color: #ffffff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
 
   &:hover:not(:disabled) {
     background: rgba(86, 89, 255, 1);
@@ -136,22 +172,23 @@
 }
 
 .panel-form {
-  padding: 20px; // Reduced padding
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 14px; // Slightly tighter gap
+  gap: 24px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 4px; // Tighter gap between label and input
+  gap: 8px; // 8px gap between label and input/select
 }
 
 .form-label {
-  font-size: 11px; // Slightly smaller
-  font-weight: 600;
-  color: #374151;
+  color: rgba(104, 113, 150, 1);
+  font-family: "CircularStd-Regular", "Circular-Std", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
   letter-spacing: 0;
   text-transform: none;
   margin-bottom: 0;
@@ -177,11 +214,9 @@
 
   &:focus {
     outline: none;
-    box-shadow: 
-      0 0 0 1px rgba(216, 220, 235, 1),
-      0 1.5px 3px -1.5px rgba(200, 207, 233, 1),
-      0 1px 0.5px -1px rgba(216, 220, 235, 1),
-      0 0 0 2px rgba(59, 130, 246, 0.1); // Added focus ring
+    box-shadow: 0 0 0 2px rgba(170, 175, 255, 1) !important;
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 1);
   }
 
   &.error {
@@ -196,47 +231,44 @@
   }
 }
 
-.date-input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
+// Date input specific styles
 .date-input {
-  width: 100%;
-  padding-right: 40px; // Space for calendar icon button
-}
+  color: rgba(164, 170, 192, 1);
+  font-family: "CircularStd-Regular", "Circular-Std", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
 
-.datepicker-toggle {
-  position: absolute;
-  right: 8px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #6b7280;
-  border-radius: 4px;
-  transition: background-color 0.2s;
-  z-index: 1;
-
-  &:hover {
-    background: #f3f4f6;
-    color: #111827;
-  }
-
-  svg {
-    display: block;
-    width: 16px;
-    height: 16px;
+  &:focus {
+    color: rgba(3, 9, 41, 1);
+    font-family: "CircularStd-Regular", "Circular-Std", sans-serif;
+    font-size: 14px;
+    font-weight: 500;
   }
 }
+
+// Work Order Name input styles (when not in focus)
+.name-input {
+  color: rgba(164, 170, 192, 1);
+  font-family: "CircularStd-Regular", "Circular-Std", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+
+  &:focus {
+    color: rgba(3, 9, 41, 1);
+    font-family: "CircularStd-Regular", "Circular-Std", sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 0 0 2px rgba(170, 175, 255, 1) !important;
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 1);
+  }
+}
+
 
 ::ng-deep {
   .ng-select {
+    width: 543px; // Ensure select takes full width
+
     .ng-select-container {
       border: none; // Removed border, using box-shadow instead
       border-radius: 5px; // Updated from 4px to match Sketch exact value
@@ -257,22 +289,63 @@
         background: rgba(255, 255, 255, 1);
       }
 
-      &.ng-select-focused {
-        box-shadow: 
-          0 0 0 1px rgba(216, 220, 235, 1),
-          0 1.5px 3px -1.5px rgba(200, 207, 233, 1),
-          0 1px 0.5px -1px rgba(216, 220, 235, 1),
-          0 0 0 2px rgba(59, 130, 246, 0.1); // Added focus ring
-        background: rgba(255, 255, 255, 1);
+      &.ng-select-focused,
+      &.ng-select-opened {
+        box-shadow: 0 0 0 2px rgba(170, 175, 255, 1) !important;
+        border-radius: 5px !important;
+        background-color: rgba(255, 255, 255, 1) !important;
       }
+    }
 
-      &.error {
-        box-shadow: 
-          0 0 0 1px rgba(239, 68, 68, 1),
-          0 1.5px 3px -1.5px rgba(200, 207, 233, 1),
-          0 1px 0.5px -1px rgba(216, 220, 235, 1);
-        background: rgba(255, 255, 255, 1);
+    // Apply focus style when ng-select wrapper has focus class
+    &.ng-select-focused .ng-select-container,
+    &.ng-select-opened .ng-select-container {
+      box-shadow: 0 0 0 2px rgba(170, 175, 255, 1) !important;
+      border-radius: 5px !important;
+      background-color: rgba(255, 255, 255, 1) !important;
+    }
+    
+    // When input inside is focused (for searchable selects)
+    .ng-input input:focus {
+      outline: none;
+    }
+    
+    // Alternative selector for when input has focus - target container via parent
+    .ng-input:has(input:focus) ~ .ng-select-container {
+      box-shadow: 0 0 0 2px rgba(170, 175, 255, 1) !important;
+      border-radius: 5px !important;
+      background-color: rgba(255, 255, 255, 1) !important;
+    }
+    
+    // Custom class for status select when focused
+    &.status-focused .ng-select-container {
+      box-shadow: 0 0 0 2px rgba(170, 175, 255, 1) !important;
+      border-radius: 5px !important;
+      background-color: rgba(255, 255, 255, 1) !important;
+    }
+
+    // When ng-select element has error class, apply error styles to container
+    &.error .ng-select-container {
+      box-shadow: 
+        0 0 0 1px rgba(239, 68, 68, 1),
+        0 1.5px 3px -1.5px rgba(200, 207, 233, 1),
+        0 1px 0.5px -1px rgba(216, 220, 235, 1);
+      background: rgba(255, 255, 255, 1);
+      
+      &.ng-select-focused,
+      &.ng-select-opened {
+        box-shadow: 0 0 0 2px rgba(170, 175, 255, 1) !important;
+        border-radius: 5px;
+        background-color: rgba(255, 255, 255, 1) !important;
       }
+    }
+
+    // Also apply when the ng-select itself has focus class
+    &.ng-select-focused .ng-select-container,
+    &.ng-select-opened .ng-select-container {
+      box-shadow: 0 0 0 2px rgba(170, 175, 255, 1) !important;
+      border-radius: 5px;
+      background-color: rgba(255, 255, 255, 1) !important;
     }
 
     .ng-value-container {
@@ -285,16 +358,21 @@
       font-size: 12px; // Match input font size
       color: #111827;
       line-height: 1.4;
+      display: flex;
+      margin-top: 6px;
+      align-items: center;
+    }
 
-      .status-option {
-        display: inline-block;
-        padding: 2px 8px;
-        border-radius: 8px;
-        font-size: 11px;
-        font-weight: 500;
-        color: #ffffff;
-        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
-      }
+    .status-badge-label {
+      font-size: 14px;
+      font-weight: 400;
+      padding: 3px 8px;
+      margin-left: 8px;
+      margin-top: 9px;
+      border-radius: 5px;
+      display: inline-block;
+      letter-spacing: 0.03px;
+      white-space: nowrap;
     }
 
     .ng-arrow-wrapper {
@@ -307,40 +385,35 @@
     }
 
     .ng-arrow {
-      // Hide default arrow
-      border: none;
+      // Use same arrow style as timescale select
+      border-color: rgba(200, 207, 233, 1) transparent transparent transparent !important;
+      border-style: solid !important;
+      border-width: 5px 4px 0 4px !important;
+      opacity: 1 !important;
+      display: inline-block !important;
       width: 0;
       height: 0;
-      opacity: 0;
+      transform: rotate(0deg); // Point down when closed
     }
 
-    // Custom SVG icon for dropdown
-    .ng-arrow-wrapper::after {
-      content: '';
-      position: absolute;
-      width: 5px;
-      height: 8.47px;
-      background-color: rgba(200, 207, 233, 1);
-      mask-image: url('/assets/icons/Down.svg');
-      mask-size: contain;
-      mask-repeat: no-repeat;
-      mask-position: center;
-      -webkit-mask-image: url('/assets/icons/Down.svg');
-      -webkit-mask-size: contain;
-      -webkit-mask-repeat: no-repeat;
-      -webkit-mask-position: center;
-      border-radius: 2px;
-      transform: rotate(270deg);
+    // Rotate arrow when dropdown is open
+    .ng-select-opened .ng-arrow {
+      transform: rotate(180deg); // Point up when open
     }
   }
 
   .ng-dropdown-panel {
-    border: 1px solid #E5E7EB; // Updated from #d1d5db to match Sketch (#E5E7EB)
-    border-radius: 4px;
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
-    margin-top: 3px;
-    background: #ffffff;
+    width: 543px;
+    height: 136px;
+    box-shadow: 
+      0 0 0 1px rgba(104, 113, 150, 0.1),
+      0 2.5px 3px -1.5px rgba(200, 207, 233, 1),
+      0 4.5px 5px -1px rgba(216, 220, 235, 1);
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 1);
+    margin-top: 5px;
     overflow: hidden;
+    z-index: 1001 !important; // Ensure dropdown appears above modal overlay (z-index: 1000)
 
     .ng-option {
       padding: 6px 10px; // Tighter padding
@@ -350,9 +423,11 @@
       transition: background-color 0.15s ease;
 
       &.ng-option-selected {
-        background: #eff6ff;
-        color: #1e40af;
-        font-weight: 500;
+        background: #ffffff; // No background for selected option
+        color: rgba(62, 64, 219, 1);
+        font-family: "CircularStd-Book", "Circular-Std", sans-serif;
+        font-size: 14px;
+        font-weight: 400;
       }
 
       &.ng-option-highlighted {

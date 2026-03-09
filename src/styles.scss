@@ -115,3 +115,17 @@ select option:active {
   color: rgba(62, 64, 219, 1) !important;
   font-weight: 500 !important;
 }
+
+/* Timescale ng-select - no border/box-shadow change on focus, hover, or click */
+.timescale-select-wrapper .ng-select-container {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.timescale-select-wrapper .ng-select.ng-select-focused .ng-select-container,
+.timescale-select-wrapper .ng-select.ng-select-opened .ng-select-container {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}

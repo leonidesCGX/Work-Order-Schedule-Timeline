@@ -211,6 +211,35 @@ The overlap detection algorithm:
 - Provides clear error feedback
 - Prevents saving overlapping orders on the same work center
 
+## Documentation
+
+### AI Prompts
+The main AI prompts used during implementation are documented in [`docs/ai-prompts.md`](docs/ai-prompts.md). These prompts are organized by purpose:
+- Design analysis and fidelity audits
+- Timeline/grid implementation
+- Form/panel refinement
+- Interaction states
+- Debugging and architecture
+
+### Trade-offs and Decisions
+Implementation decisions and trade-offs are documented in [`docs/trade-offs.md`](docs/trade-offs.md). This includes:
+- Timeline rendering approach
+- DOM structure choices
+- Date picker implementation decisions
+- Overlap validation strategy
+- Visual fidelity compromises
+- Performance and maintainability decisions
+
+### @upgrade Comments
+Throughout the codebase, you'll find `@upgrade` comments marking areas where future improvements would be valuable. These comments indicate:
+- **Timeline virtualization**: Virtual scrolling for large date ranges and datasets
+- **Accessibility improvements**: ARIA labels, keyboard navigation, screen reader support
+- **Datepicker enhancements**: Inline calendar views, richer interactions
+- **Responsive behavior**: Mobile and tablet breakpoints, flexible layouts
+- **Animation polish**: Smooth transitions and entrance/exit effects
+
+These comments are not exhaustive but highlight key areas where the application could be enhanced for production use.
+
 ## Future Enhancements
 
 - [ ] Infinite horizontal scroll (dynamically load date columns)

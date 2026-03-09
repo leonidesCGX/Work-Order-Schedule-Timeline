@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, ChangeDetectorRef, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { NgSelectModule } from '@ng-select/ng-select';
 import { WorkOrderService } from '../services/work-order.service';
 import { WorkCenterDocument } from '../models/work-center.model';
 import { WorkOrderDocument } from '../models/work-order.model';
@@ -24,7 +25,7 @@ interface WorkOrderBar {
 @Component({
   selector: 'app-timeline',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, NgSelectModule],
   templateUrl: './timeline.component.html',
   styleUrl: './timeline.component.scss'
 })
@@ -49,13 +50,14 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
   hoveredWorkCenterIndex: number | null = null;
   selectedWorkOrder: WorkOrderDocument | null = null;
   showActionsMenu: { orderId: string; x: number; y: number } | null = null;
-  hoveredTimelineCell: { workCenterIndex: number; x: number; y: number } | null = null;
+  hoveredTimelineCell: { workCenterIndex: number; x: number; tooltipLeft: number; tooltipTop: number } | null = null;
   
   // Selection state
   isSelecting: boolean = false;
   selectionStart: { x: number; workCenterIndex: number } | null = null;
   selectionEnd: { x: number; workCenterIndex: number } | null = null;
   selectionRange: { left: number; width: number; workCenterIndex: number; top: number } | null = null;
+  mouseDownPosition: { x: number; y: number } | null = null;
 
   private destroy$ = new Subject<void>();
   readonly ROW_HEIGHT = 60; // Updated from 36px to match Sketch exact value
@@ -69,12 +71,22 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly BUFFER_DAYS_DAY = 14;
   private readonly BUFFER_WEEKS_WEEK = 8;
   private readonly BUFFER_MONTHS_MONTH = 6;
+  // Infinite scroll: load more when within this many viewport widths of edge
+  private readonly INFINITE_SCROLL_THRESHOLD = 2;
+  private readonly COLUMNS_TO_LOAD = 14;
+  private readonly MAX_TOTAL_COLUMNS = 500;
+  private isInfiniteScrollBusy = false;
+  private scrollCheckRAF: number | null = null;
+  private hoveredCellLeaveTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private workOrderService: WorkOrderService,
     private cdr: ChangeDetectorRef
   ) {}
 
+  // @upgrade: Add full keyboard navigation support (arrow keys, tab, enter, escape).
+  // Implement ARIA labels and roles for screen readers. Add focus management for work order cards.
+  // Consider implementing skip links and proper focus trapping in modals.
   ngOnInit(): void {
     this.workOrderService.workCenters$
       .pipe(takeUntil(this.destroy$))
@@ -105,8 +117,8 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    
-    // Remove global mouse event listeners
+    if (this.scrollCheckRAF != null) cancelAnimationFrame(this.scrollCheckRAF);
+    if (this.hoveredCellLeaveTimer) clearTimeout(this.hoveredCellLeaveTimer);
     document.removeEventListener('mousedown', this.onDocumentMouseDown.bind(this));
     document.removeEventListener('mousemove', this.onDocumentMouseMove.bind(this));
     document.removeEventListener('mouseup', this.onDocumentMouseUp.bind(this));
@@ -117,15 +129,95 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
     setTimeout(() => this.scrollToCurrentDate(), 50);
   }
 
+  private checkInfiniteScroll(scrollElement: HTMLElement): void {
+    if (this.columns.length === 0 || this.isInfiniteScrollBusy) return;
+    const scrollLeft = scrollElement.scrollLeft;
+    const clientWidth = scrollElement.clientWidth;
+    const threshold = clientWidth * this.INFINITE_SCROLL_THRESHOLD;
+    const totalColumnsWidth = this.columns.reduce((s, c) => s + c.width, 0);
+
+    if (this.columns.length >= this.MAX_TOTAL_COLUMNS) return;
+
+    const nearLeft = scrollLeft < threshold;
+    const nearRight = scrollLeft + clientWidth > totalColumnsWidth - threshold;
+
+    if (nearLeft) {
+      this.prependColumns();
+    } else if (nearRight) {
+      this.appendColumns();
+    }
+  }
+
+  private prependColumns(): void {
+    if (this.columns.length === 0 || this.columns.length >= this.MAX_TOTAL_COLUMNS || this.isInfiniteScrollBusy) return;
+    this.isInfiniteScrollBusy = true;
+
+    const columnWidth = this.getColumnWidth();
+    const newColumns = this.generateColumnsInRange(
+      this.columns[0].date,
+      -this.COLUMNS_TO_LOAD
+    );
+    if (newColumns.length === 0) {
+      this.isInfiniteScrollBusy = false;
+      return;
+    }
+
+    const addedWidth = newColumns.length * columnWidth;
+    const el = this.timelineGrid?.nativeElement;
+    const previousScrollLeft = el?.scrollLeft ?? 0;
+
+    this.columns = [...newColumns, ...this.columns];
+    this.workOrderBars = this.calculateWorkOrderBars();
+    this.cdr.detectChanges();
+
+    if (el) {
+      requestAnimationFrame(() => {
+        el.scrollLeft = previousScrollLeft + addedWidth;
+        this.isInfiniteScrollBusy = false;
+      });
+    } else {
+      this.isInfiniteScrollBusy = false;
+    }
+  }
+
+  private appendColumns(): void {
+    if (this.columns.length === 0 || this.columns.length >= this.MAX_TOTAL_COLUMNS || this.isInfiniteScrollBusy) return;
+    const lastCol = this.columns[this.columns.length - 1];
+    const newColumns = this.generateColumnsInRange(lastCol.date, this.COLUMNS_TO_LOAD, true);
+    if (newColumns.length === 0) return;
+
+    this.columns = [...this.columns, ...newColumns];
+    this.workOrderBars = this.calculateWorkOrderBars();
+    this.cdr.detectChanges();
+  }
+
+  goToCurrent(): void {
+    this.currentDate = new Date();
+    this.calculateTimeline();
+    setTimeout(() => this.scrollToCurrentDate(), 50);
+  }
+
+  get goToCurrentLabel(): string {
+    const labels: Record<Timescale, string> = {
+      hour: 'Go to current hour',
+      day: 'Go to current day',
+      week: 'Go to current week',
+      month: 'Go to current month'
+    };
+    return labels[this.timescale];
+  }
+
   onTimelineScroll(event: Event): void {
     const target = event.target as HTMLElement;
     if (this.workCenterColumn?.nativeElement) {
-      // Sync scroll between timeline and work center column
-      // The work center column needs to account for the left-panel-header height
       const scrollTop = target.scrollTop;
       this.workCenterColumn.nativeElement.scrollTop = scrollTop;
     }
-    this.calculateTimeline();
+    if (this.scrollCheckRAF != null) cancelAnimationFrame(this.scrollCheckRAF);
+    this.scrollCheckRAF = requestAnimationFrame(() => {
+      this.checkInfiniteScroll(target);
+      this.scrollCheckRAF = null;
+    });
   }
 
   calculateTimeline(): void {
@@ -134,6 +226,9 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
     this.cdr.detectChanges();
   }
 
+  // @upgrade: Consider implementing virtual scrolling for very large date ranges.
+  // For month view with many months, rendering all columns could impact performance.
+  // Virtual scrolling would only render visible columns and dynamically load/unload as user scrolls.
   private generateColumns(): TimelineColumn[] {
     const columns: TimelineColumn[] = [];
     const today = new Date();
@@ -210,8 +305,31 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
       ? new Date(endDate.getFullYear(), endDate.getMonth() + 1, 1) // First day of month after endDate
       : endDate;
     
-    // For hour view, limit to prevent too many columns
-    const maxColumns = this.timescale === 'hour' ? 48 : 100;
+    // Calculate max columns based on timescale to prevent too many columns
+    // For month view, calculate dynamically based on the date range
+    let maxColumns: number;
+    switch (this.timescale) {
+      case 'hour':
+        maxColumns = 48; // ±24 hours
+        break;
+      case 'day':
+        maxColumns = 50; // ±14 days + buffer
+        break;
+      case 'week':
+        maxColumns = 20; // ±8 weeks + buffer
+        break;
+      case 'month':
+        // Calculate the actual number of months needed
+        // For ±6 months, we need: 6 (before) + 1 (current) + 6 (after) = 13 months
+        // Plus the extra month from endDateForLoop = 14 months total
+        // Add buffer for safety
+        const monthsDiff = (endDateForLoop.getFullYear() - startDate.getFullYear()) * 12 + 
+                          (endDateForLoop.getMonth() - startDate.getMonth());
+        maxColumns = monthsDiff + 5; // Add 5 month buffer for safety
+        break;
+      default:
+        maxColumns = 100;
+    }
     
     while (currentDate < endDateForLoop) {
       const label = this.formatColumnLabel(currentDate);
@@ -223,7 +341,11 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
       const nextDate = dateIncrement(currentDate);
       
       // Safety check to prevent infinite loops
-      if (nextDate <= currentDate || columns.length > maxColumns) break;
+      if (nextDate <= currentDate) break;
+      
+      // Only check maxColumns as a safety limit, but prioritize reaching endDateForLoop
+      if (columns.length >= maxColumns && currentDate >= endDateForLoop) break;
+      
       currentDate = nextDate;
     }
 
@@ -248,12 +370,126 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   /**
+   * Generate columns for infinite scroll. When count < 0, generates columns before anchorDate.
+   * When count > 0, generates columns after anchorDate (skipFirst=true skips the anchor itself).
+   */
+  private generateColumnsInRange(
+    anchorDate: Date,
+    count: number,
+    skipFirst: boolean = false
+  ): TimelineColumn[] {
+    const columnWidth = this.getColumnWidth();
+    const columns: TimelineColumn[] = [];
+
+    let dateIncrement: (date: Date) => Date;
+    let dateDecrement: (date: Date) => Date;
+
+    switch (this.timescale) {
+      case 'hour':
+        dateIncrement = (d: Date) => {
+          const next = new Date(d);
+          next.setHours(next.getHours() + 1);
+          return next;
+        };
+        dateDecrement = (d: Date) => {
+          const prev = new Date(d);
+          prev.setHours(prev.getHours() - 1);
+          return prev;
+        };
+        break;
+      case 'day':
+        dateIncrement = (d: Date) => {
+          const next = new Date(d);
+          next.setDate(next.getDate() + 1);
+          return next;
+        };
+        dateDecrement = (d: Date) => {
+          const prev = new Date(d);
+          prev.setDate(prev.getDate() - 1);
+          return prev;
+        };
+        break;
+      case 'week':
+        dateIncrement = (d: Date) => {
+          const next = new Date(d);
+          next.setDate(next.getDate() + 7);
+          return next;
+        };
+        dateDecrement = (d: Date) => {
+          const prev = new Date(d);
+          prev.setDate(prev.getDate() - 7);
+          return prev;
+        };
+        break;
+      case 'month':
+        dateIncrement = (d: Date) => {
+          const next = new Date(d);
+          next.setMonth(next.getMonth() + 1);
+          next.setDate(1);
+          return next;
+        };
+        dateDecrement = (d: Date) => {
+          const prev = new Date(d);
+          prev.setMonth(prev.getMonth() - 1);
+          prev.setDate(1);
+          return prev;
+        };
+        break;
+      default:
+        return [];
+    }
+
+    if (count < 0) {
+      let current = new Date(anchorDate);
+      const n = Math.min(-count, this.MAX_TOTAL_COLUMNS);
+      for (let i = 0; i < n; i++) {
+        current = dateDecrement(current);
+        columns.unshift({
+          date: new Date(current),
+          label: this.formatColumnLabel(current),
+          width: columnWidth
+        });
+      }
+    } else {
+      let current = new Date(anchorDate);
+      if (skipFirst) current = dateIncrement(current);
+      const n = Math.min(count, this.MAX_TOTAL_COLUMNS);
+      for (let i = 0; i < n; i++) {
+        columns.push({
+          date: new Date(current),
+          label: this.formatColumnLabel(current),
+          width: columnWidth
+        });
+        current = dateIncrement(current);
+      }
+    }
+
+    return columns;
+  }
+
+  /**
    * Calculates the position and width of work order bars on the timeline.
    * Only includes orders that overlap with the visible date range.
    * Positions are calculated relative to the first column date.
    * 
    * @returns Array of work order bars with calculated positions
    */
+  /**
+   * Parses an ISO date string (YYYY-MM-DD) to a Date object without timezone issues.
+   * 
+   * @param isoString - Date string in format YYYY-MM-DD
+   * @returns Date object in local timezone
+   */
+  private parseISODate(isoString: string): Date {
+    const [year, month, day] = isoString.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  // @upgrade: For very large datasets (1000+ work orders), consider:
+  // - Virtual scrolling for work order bars (only render visible bars)
+  // - Intersection Observer API to detect visible bars
+  // - Debouncing/throttling of calculations on scroll
+  // - Web Workers for heavy date calculations
   private calculateWorkOrderBars(): WorkOrderBar[] {
     if (this.columns.length === 0) return [];
 
@@ -291,8 +527,9 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     this.workOrders.forEach(order => {
-      const orderStart = new Date(order.data.startDate);
-      const orderEnd = new Date(order.data.endDate);
+      // Parse ISO date strings (YYYY-MM-DD) without timezone issues
+      const orderStart = this.parseISODate(order.data.startDate);
+      const orderEnd = this.parseISODate(order.data.endDate);
       if (this.timescale !== 'hour') {
         orderStart.setHours(0, 0, 0, 0);
         orderEnd.setHours(23, 59, 59, 999);
@@ -316,8 +553,10 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
       const endDate = orderEnd > lastColumnDate ? new Date(lastColumnDate) : new Date(orderEnd);
 
       // Calculate pixel positions relative to the first column
-      const left = this.calculateDatePosition(startDate, firstColumnDate);
-      const right = this.calculateDatePosition(endDate, firstColumnDate);
+      // For startDate, use the start of the period
+      // For endDate, use the end of the period to include the full day/week/month
+      const left = this.calculateDatePosition(startDate, firstColumnDate, false);
+      const right = this.calculateDatePosition(endDate, firstColumnDate, true); // true = end of period
       const width = Math.max(right - left, 20); // Minimum width of 20px for visibility
 
       bars.push({
@@ -337,36 +576,58 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
    * 
    * @param date - The target date to position
    * @param startDate - The first date in the visible timeline range
+   * @param isEndDate - If true, position at the end of the period (end of day/week/month), otherwise at the start
    * @returns Pixel position from the left edge of the timeline
    */
-  calculateDatePosition(date: Date, startDate: Date): number {
-    // Normalize dates to start of day for consistent calculations
+  calculateDatePosition(date: Date, startDate: Date, isEndDate: boolean = false): number {
     const normalizedDate = new Date(date);
-    normalizedDate.setHours(0, 0, 0, 0);
     const normalizedStart = new Date(startDate);
-    normalizedStart.setHours(0, 0, 0, 0);
-
+    
     switch (this.timescale) {
       case 'hour':
-        // Convert milliseconds to hours, then multiply by column width
+        // For hour view, use exact time
         const diffTimeHour = normalizedDate.getTime() - normalizedStart.getTime();
         const diffHours = diffTimeHour / (1000 * 60 * 60);
+        if (isEndDate) {
+          // Position at the end of the hour
+          return (diffHours + 1) * this.COLUMN_WIDTH_HOUR;
+        }
         return diffHours * this.COLUMN_WIDTH_HOUR;
       case 'day':
-        // Convert milliseconds to days, then multiply by column width
+        // Normalize to start of day for consistent calculations
+        normalizedDate.setHours(0, 0, 0, 0);
+        normalizedStart.setHours(0, 0, 0, 0);
         const diffTime = normalizedDate.getTime() - normalizedStart.getTime();
         const diffDays = diffTime / (1000 * 60 * 60 * 24);
+        if (isEndDate) {
+          // Position at the end of the day (start of next day)
+          return (diffDays + 1) * this.COLUMN_WIDTH_DAY;
+        }
         return diffDays * this.COLUMN_WIDTH_DAY;
       case 'week':
-        // Convert to days, then to weeks, then multiply by column width
+        // Normalize to start of day
+        normalizedDate.setHours(0, 0, 0, 0);
+        normalizedStart.setHours(0, 0, 0, 0);
         const diffTimeWeek = normalizedDate.getTime() - normalizedStart.getTime();
         const diffDaysWeek = diffTimeWeek / (1000 * 60 * 60 * 24);
-        return (diffDaysWeek / 7) * this.COLUMN_WIDTH_WEEK;
+        const diffWeeks = diffDaysWeek / 7;
+        if (isEndDate) {
+          // Position at the end of the week (start of next week)
+          return (diffWeeks + 1) * this.COLUMN_WIDTH_WEEK;
+        }
+        return diffWeeks * this.COLUMN_WIDTH_WEEK;
       case 'month':
+        // Normalize to start of day
+        normalizedDate.setHours(0, 0, 0, 0);
+        normalizedStart.setHours(0, 0, 0, 0);
         // Calculate month difference accounting for year changes
         const yearDiff = normalizedDate.getFullYear() - normalizedStart.getFullYear();
         const monthDiff = normalizedDate.getMonth() - normalizedStart.getMonth();
         const totalMonths = yearDiff * 12 + monthDiff;
+        if (isEndDate) {
+          // Position at the end of the month (start of next month)
+          return (totalMonths + 1) * this.COLUMN_WIDTH_MONTH;
+        }
         // For dates within a month, calculate the fraction of the month
         const dayOfMonth = normalizedDate.getDate();
         const daysInMonth = new Date(normalizedDate.getFullYear(), normalizedDate.getMonth() + 1, 0).getDate();
@@ -391,8 +652,12 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onTimelineClick(event: MouseEvent, workCenterIndex: number): void {
-    if ((event.target as HTMLElement).closest('.work-order-bar')) {
-      return; // Don't trigger create if clicking on a bar
+    // Don't trigger if clicking on work order bar, actions menu, or if there's an active selection
+    if ((event.target as HTMLElement).closest('.work-order-bar') ||
+        (event.target as HTMLElement).closest('.actions-menu') ||
+        (event.target as HTMLElement).closest('.selection-menu') ||
+        this.selectionRange) {
+      return;
     }
 
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
@@ -422,13 +687,9 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
     const scrollLeft = this.timelineGrid?.nativeElement?.scrollLeft || 0;
     const absoluteX = clickX + scrollLeft;
 
-    // Get column width based on current timescale
     const columnWidth = this.getColumnWidth();
-    
-    // Calculate which column we're in
     const columnIndex = Math.floor(absoluteX / columnWidth);
     
-    // Check if column index is within valid range
     if (columnIndex < 0 || columnIndex >= this.columns.length) {
       this.hoveredTimelineCell = null;
       return;
@@ -436,7 +697,6 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
 
     const columnStartX = columnIndex * columnWidth;
     
-    // Check if there's already a work order in this area
     const hasOrder = this.getBarsForWorkCenter(this.workCenters[workCenterIndex].docId)
       .some(bar => {
         const barStart = bar.left;
@@ -445,10 +705,19 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
       });
 
     if (!hasOrder) {
+      if (this.hoveredCellLeaveTimer) {
+        clearTimeout(this.hoveredCellLeaveTimer);
+        this.hoveredCellLeaveTimer = null;
+      }
+      const columnCenterX = columnStartX + columnWidth / 2;
+      const gridRect = this.timelineGrid?.nativeElement?.getBoundingClientRect();
+      const tooltipLeft = gridRect ? gridRect.left + (columnCenterX - scrollLeft) : event.clientX;
+      const tooltipTop = event.clientY - 38;
       this.hoveredTimelineCell = {
         workCenterIndex,
-        x: columnStartX - scrollLeft,
-        y: event.clientY
+        x: columnStartX,
+        tooltipLeft,
+        tooltipTop
       };
     } else {
       this.hoveredTimelineCell = null;
@@ -472,8 +741,7 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /**
    * Calculate the left position of a column separator
-   * Used for rendering vertical grid lines
-   * Lines should be positioned at the right edge of each column (matching header borders)
+   * Used for rendering vertical grid lines at the start of each column
    */
   getColumnLeftPosition(column: { date: Date; label: string; width: number }): number {
     if (!this.columns || this.columns.length === 0) return 0;
@@ -481,9 +749,8 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
       c.date.getTime() === column.date.getTime()
     );
     if (columnIndex === -1) return 0;
-    // Position at the right edge of the column (matching border-right of header)
-    // First line at column.width, second at 2*column.width, etc.
-    return (columnIndex + 1) * column.width;
+    // Position at the start (left edge) of each column
+    return columnIndex * column.width;
   }
 
   /**
@@ -492,12 +759,35 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
    */
   getTotalTimelineWidth(): number {
     if (!this.columns || this.columns.length === 0) return 0;
-    const columnWidth = this.getColumnWidth();
-    return this.columns.length * columnWidth;
+    // Sum the actual widths of all columns to get exact total width
+    // For month view, add a larger buffer to ensure we can scroll to the end
+    // The buffer needs to account for the viewport width to ensure full scrollability
+    const totalWidth = this.columns.reduce((total, column) => total + column.width, 0);
+    
+    if (this.timescale === 'month') {
+      // For months, add a buffer that's at least one viewport width to ensure
+      // we can scroll past the last column completely
+      const viewportWidth = this.timelineGrid?.nativeElement?.clientWidth || 1200;
+      return totalWidth + Math.max(viewportWidth * 0.5, 100); // At least 50% of viewport or 100px
+    }
+    
+    return totalWidth + 10; // Smaller buffer for other timescales
   }
 
   onTimelineRowMouseLeave(): void {
-    this.hoveredTimelineCell = null;
+    if (this.hoveredCellLeaveTimer) clearTimeout(this.hoveredCellLeaveTimer);
+    this.hoveredCellLeaveTimer = setTimeout(() => {
+      this.hoveredTimelineCell = null;
+      this.hoveredCellLeaveTimer = null;
+      this.cdr.detectChanges();
+    }, 150);
+  }
+
+  onTooltipMouseEnter(): void {
+    if (this.hoveredCellLeaveTimer) {
+      clearTimeout(this.hoveredCellLeaveTimer);
+      this.hoveredCellLeaveTimer = null;
+    }
   }
 
   // Selection handlers
@@ -512,8 +802,8 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
     // Only start selection on left mouse button
     if (event.button !== 0) return;
 
-    event.preventDefault();
-    event.stopPropagation();
+    // Store initial mouse position to detect if it's a drag or click
+    this.mouseDownPosition = { x: event.clientX, y: event.clientY };
 
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
     const clickX = event.clientX - rect.left;
@@ -539,6 +829,16 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
 
   onDocumentMouseMove(event: MouseEvent): void {
     if (!this.isSelecting || !this.selectionStart) return;
+
+    // If mouse moved significantly, prevent click event (it's a drag)
+    if (this.mouseDownPosition) {
+      const deltaX = Math.abs(event.clientX - this.mouseDownPosition.x);
+      const deltaY = Math.abs(event.clientY - this.mouseDownPosition.y);
+      if (deltaX > 3 || deltaY > 3) {
+        // User is dragging, prevent click event
+        event.preventDefault();
+      }
+    }
 
     // Find which timeline row we're over
     const timelineRows = document.querySelectorAll('.timeline-row');
@@ -567,8 +867,19 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
 
   onDocumentMouseUp(event: MouseEvent): void {
     if (this.isSelecting) {
+      // If it was just a click (no significant movement), clear selection to allow click event
+      if (this.mouseDownPosition) {
+        const deltaX = Math.abs(event.clientX - this.mouseDownPosition.x);
+        const deltaY = Math.abs(event.clientY - this.mouseDownPosition.y);
+        if (deltaX <= 3 && deltaY <= 3) {
+          // It was a click, not a drag - clear selection so click event can fire
+          this.selectionRange = null;
+          this.selectionStart = null;
+          this.selectionEnd = null;
+        }
+      }
       this.isSelecting = false;
-      // Keep selection visible after mouse up
+      this.mouseDownPosition = null;
     }
   }
 
@@ -745,15 +1056,60 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
   getStatusColor(status: string): string {
     switch (status) {
       case 'open':
-        return 'rgba(237, 238, 255, 1)'; // Updated to match Sketch exact value
+        return 'rgba(242, 254, 255, 1)'; // Bar background color for open
       case 'in-progress':
-        return '#DDD6FE'; // Light Purple
+        return 'rgba(237, 238, 255, 1)'; // Bar background color for in-progress
       case 'complete':
-        return '#A7F3D0'; // Light Green
+        return 'rgba(248, 255, 243, 1)'; // Bar background color for complete
       case 'blocked':
-        return 'rgba(255, 245, 207, 1)'; // Updated to match Sketch exact value
+        return 'rgba(255, 252, 241, 1)'; // Bar background color for blocked
       default:
-        return 'rgba(237, 238, 255, 1)'; // Default to open color
+        return 'rgba(242, 254, 255, 1)'; // Default to open color
+    }
+  }
+
+  getStatusBoxShadow(status: string): string {
+    switch (status) {
+      case 'open':
+        return '0 0 0 1px rgba(206, 251, 255, 1)';
+      case 'in-progress':
+        return '0 0 0 1px rgba(222, 224, 255, 1)';
+      case 'complete':
+        return '0 0 0 1px rgba(209, 250, 179, 1)';
+      case 'blocked':
+        return '0 0 0 1px rgba(255, 245, 207, 1)';
+      default:
+        return '0 0 0 1px rgba(206, 251, 255, 1)'; // Default to open shadow
+    }
+  }
+
+  getStatusTextColor(status: string): string {
+    switch (status) {
+      case 'in-progress':
+        return 'rgba(62, 64, 219, 1)';
+      case 'complete':
+        return 'rgba(8, 162, 104, 1)';
+      case 'blocked':
+        return 'rgba(177, 54, 0, 1)';
+      case 'open':
+        return 'rgba(0, 176, 191, 1)';
+      default:
+        return 'rgba(0, 176, 191, 1)'; // Default to open color
+    }
+  }
+
+  getStatusBackgroundColor(status: string): string {
+    switch (status) {
+      case 'in-progress':
+        return 'rgba(214, 216, 255, 1)';
+      case 'complete':
+        return 'rgba(225, 255, 204, 1)';
+      case 'blocked':
+        return 'rgba(252, 238, 181, 1)';
+      case 'open':
+        return 'rgba(228, 253, 255, 1)';
+      default:
+        return 'rgba(228, 253, 255, 1)'; // Default to open background
     }
   }
 
@@ -841,31 +1197,31 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
    * For day view, it's centered. For week/month views, it's positioned based on the day within the period.
    */
   getCurrentDateIndicatorPosition(column: TimelineColumn): number {
-    const today = new Date(this.currentDate);
-    today.setHours(0, 0, 0, 0);
-    const colDate = new Date(column.date);
-    colDate.setHours(0, 0, 0, 0);
+    // Always position at the start (left edge) of the column according to Sketch design
+    return 0;
+  }
 
-    switch (this.timescale) {
-      case 'hour':
-        // Position based on minutes within the hour
-        const minutes = today.getMinutes();
-        return (minutes / 60) * 100; // Percentage within the hour column
-      case 'day':
-        // Centered in the column
-        return 50; // 50% of column width
-      case 'week':
-        // Position based on day of week (0 = Sunday, 6 = Saturday)
-        const dayOfWeek = today.getDay();
-        return (dayOfWeek / 7) * 100; // Percentage within the week column
-      case 'month':
-        // Position based on day of month
-        const dayOfMonth = today.getDate();
-        const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-        return (dayOfMonth / daysInMonth) * 100; // Percentage within the month column
-      default:
-        return 50;
+  /**
+   * Calculates the absolute pixel position of the current date line in the timeline rows.
+   * This matches the position of the current date indicator in the header.
+   * Positioned at the start (left edge) of the column according to Sketch design.
+   */
+  getCurrentDateLinePosition(column: TimelineColumn): number {
+    if (!this.columns || this.columns.length === 0) return 0;
+    
+    const columnIndex = this.columns.findIndex(c => 
+      c.date.getTime() === column.date.getTime()
+    );
+    if (columnIndex === -1) return 0;
+    
+    // Calculate the start position of the column by summing widths of previous columns
+    let columnStart = 0;
+    for (let i = 0; i < columnIndex; i++) {
+      columnStart += this.columns[i].width;
     }
+    
+    // Position at the start (left edge) of the column
+    return columnStart;
   }
 
   @Output() createWorkOrder = new EventEmitter<{ workCenterId: string; startDate: Date; endDate?: Date }>();

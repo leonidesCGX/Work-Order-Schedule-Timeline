@@ -1,3 +1,6 @@
+// @upgrade: Add responsive breakpoints for mobile and tablet views.
+// Consider: flexible column widths, stacked layout for small screens, touch-friendly interactions.
+// Current implementation uses fixed widths optimized for desktop viewing.
 .timeline-wrapper {
   width: 100%;
   height: 100vh;
@@ -6,11 +9,11 @@
   margin-left: 101px;
   background: #ffffff;
   font-family: "Circular-Std", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  overflow: hidden; // Prevent wrapper from scrolling
 }
 
 .work-center-column {
-  width: 238px; // Updated from 200px to match Sketch exact value
-  border-right: 1px solid #e5e7eb;
+  width: 380px; // Updated to match work-center-row width
   background: #ffffff;
   display: flex;
   flex-direction: column;
@@ -18,6 +21,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
+  min-height: 0; // Important for flex children to respect overflow
 }
 
 .logo-row {
@@ -66,6 +70,9 @@
   background: #ffffff;
   flex-shrink: 0;
   border-bottom: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .timescale-card {
@@ -78,8 +85,10 @@
   gap: 0;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); // Small box-shadow on entire component
   width: fit-content;
-  overflow: hidden; // Ensure rounded corners work properly
+  overflow: visible; // Changed to visible so dropdown can appear
   height: 25px;
+  position: relative;
+  z-index: 100; // Ensure dropdown appears above other elements
 }
 
 .timescale-label-wrapper {
@@ -114,129 +123,210 @@
   background: rgba(255, 255, 255, 1); // Pure white background
   overflow: visible;
   flex-shrink: 0;
-
-  // Removed ::after pseudo-element, using inline SVG instead
+  z-index: 101; // Higher z-index to ensure it's clickable
 }
 
-.timescale-select-icon {
-  position: absolute;
-  right: 8px;
-  top: 14px;
-  transform: translateY(-50%);
-  width: 9px;
-  height: 8.47px;
-  border-radius: 2px;
-  pointer-events: none;
-  color: rgb(62, 64, 219);
-  z-index: 10;
-  
-  path {
-    fill: currentColor; // Inherit color from parent
-  }
-}
-
-.timescale-select {
-  width: 100% !important;
-  height: 100% !important;
-  padding: 0 8px !important;
-  padding-right: 20px !important;
-  border: none !important;
-  border-radius: 0 5px 5px 0 !important;
-  font-size: 13px !important;
-  color: rgba(62, 64, 219, 1) !important; // Vibrant blue/purple text color for selected value
-  background: rgba(255, 255, 255, 1) !important; // Pure white background
-  background-image: none !important;
+.btn-go-to-current {
+  height: 25px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 5px;
+  background-color: rgba(248, 248, 250, 1);
+  color: rgba(62, 64, 219, 1);
+  font-family: "CircularStd-Medium", "Circular-Std", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
-  font-family: "CircularStd-Medium", "Circular-Std", sans-serif !important;
-  font-weight: 501!important;
-  font-style: normal !important;
-  appearance: none !important;
-  -webkit-appearance: none !important;
-  -moz-appearance: none !important;
-  transition: background-color 0.2s ease;
-  box-sizing: border-box !important;
-  line-height: 25px !important;
-  margin: 0 !important;
-  position: relative;
-  z-index: 1;
-  text-align: left;
-  vertical-align: middle;
-  
-  // Dropdown panel styles (when open) - limited browser support
-  // These styles attempt to match the Sketch design:
-  // width: 200px, height: 136px, border-radius: 5px
-  // box-shadow: 0 0 0 1px rgba(104, 113, 150, 0.1), 0 2.5px 3px -1.5px rgba(200, 207, 233, 1), 0 4.5px 5px -1px rgba(216, 220, 235, 1)
-  // Note: Native select dropdowns are OS-controlled and have limited styling options
-
-  &::-ms-expand {
-    display: none !important;
-  }
-
-  &::-webkit-appearance {
-    -webkit-appearance: none !important;
-  }
+  transition: background-color 0.2s ease, color 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  white-space: nowrap;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 1) !important;
-    background-image: none !important;
+    background-color: rgba(235, 236, 252, 1);
+    color: rgba(62, 64, 219, 1);
   }
+}
 
-  &:focus {
-    outline: none !important;
-    background-color: #ffffff !important;
+// Only apply these styles to the timescale select container - fixed size, no change on focus/hover/click
+::ng-deep .timescale-ng-select .ng-select-container,
+::ng-deep .timescale-ng-select .ng-select.ng-select-focused .ng-select-container,
+::ng-deep .timescale-ng-select .ng-select.ng-select-opened .ng-select-container,
+::ng-deep .timescale-ng-select .ng-input:has(input:focus) ~ .ng-select-container {
+  width: 71px !important;
+  min-width: 71px !important;
+  height: 25px !important;
+  min-height: 25px !important;
+  border: none !important;
+  border-color: transparent !important;
+  border-radius: 0 5px 5px 0 !important;
+  background: rgba(255, 255, 255, 1) !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding: 0 !important;
+  cursor: pointer !important;
+  transition: none !important;
+
+  &:hover,
+  &:focus,
+  &:focus-within {
     border: none !important;
+    border-color: transparent !important;
     box-shadow: none !important;
-    background-image: none !important;
+    outline: none !important;
+    background: rgba(255, 255, 255, 1) !important;
   }
+}
 
-  &:active {
-    background-image: none !important;
-    background-color: #ffffff !important;
-  }
+::ng-deep  .ng-value-container {
+  padding: 0 8px !important;
+  padding-right: 7px !important; // More space for icon (arrow + wrapper padding)
+  background: rgba(255, 255, 255, 1) !important;
+  min-height: 25px !important;
+  height: 25px !important;
+  align-items: center !important;
+  display: flex !important;
+  overflow: visible !important; // Allow text to be fully visible
+}
 
-  // Style for options in dropdown
-  option {
-    color: #000000 !important; // Black text for non-selected options in dropdown
-    font-weight: 500 !important;
-    background: #ffffff !important; // White background - removes blue hover
-    font-family: "CircularStd-Medium", "Circular-Std", sans-serif !important;
+// Only apply these styles to the timescale dropdown, not all ng-select dropdowns
+::ng-deep .timescale-ng-select ~ .ng-dropdown-panel,
+::ng-deep .timescale-select-wrapper .ng-dropdown-panel {
+  width: 200px !important;
+  min-height: 136px !important;
+  border: none !important;
+  border-radius: 5px !important;
+  background-color: rgba(255, 255, 255, 1) !important;
+  box-shadow: 
+    0 0 0 1px rgba(104, 113, 150, 0.1),
+    0 2.5px 3px -1.5px rgba(200, 207, 233, 1),
+    0 4.5px 5px -1px rgba(216, 220, 235, 1) !important;
+  margin-top: 3px !important;
+  overflow: hidden !important;
+  z-index: 1000 !important;
+  
+  .ng-option {
     padding: 6px 8px !important;
+    color: #000000 !important; // Black text for non-selected options
+    background-color: rgba(255, 255, 255, 1) !important; // White background
+    font-size: 13px !important;
+    font-family: "CircularStd-Medium", "Circular-Std", sans-serif !important;
+    font-weight: 500 !important;
     
-    // Remove blue hover background
-    &:hover {
-      background: #ffffff !important;
+    // Hover state - white background, black text (no blue background)
+    &.ng-option-marked,
+    &.ng-option-highlighted {
+      background-color: rgba(255, 255, 255, 1) !important;
       color: #000000 !important;
     }
     
-    &:checked,
-    &[selected] {
-      color: rgba(62, 64, 219, 1) !important; // Purple text for selected option
-      background: #ffffff !important; // White background
+    // Selected option - white background, purple text
+    &.ng-option-selected {
+      background-color: rgba(255, 255, 255, 1) !important;
+      color: rgba(62, 64, 219, 1) !important; // Purple text
       font-weight: 500 !important;
+    }
+    
+    // Selected + hovered - still white background
+    &.ng-option-selected.ng-option-marked,
+    &.ng-option-selected.ng-option-highlighted {
+      background-color: rgba(255, 255, 255, 1) !important;
+      color: rgba(62, 64, 219, 1) !important;
     }
   }
 }
+// ng-select styling for timescale - fixed size, no visual change on focus/hover/click
+::ng-deep .timescale-ng-select {
+  width: 71px !important;
+  height: 25px !important;
+  border-radius: 0 5px 5px 0;
+  position: relative;
+  z-index: 1;
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
 
+// Inner ng-select - no border/box-shadow on any state
+::ng-deep .timescale-ng-select .ng-select,
+::ng-deep .timescale-ng-select .ng-select.ng-select-focused,
+::ng-deep .timescale-ng-select .ng-select.ng-select-opened {
+  width: 71px !important;
+  height: 25px !important;
+  border-radius: 0 5px 5px 0;
+  position: relative;
+  z-index: 1;
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+// Override when input inside has focus
+::ng-deep .timescale-ng-select .ng-input input:focus {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+// Timescale value container - text spacing (top 4px, bottom 5px, left 8px)
+::ng-deep .timescale-ng-select .ng-value-container {
+  padding-top: 4px !important;
+  padding-bottom: 5px !important;
+  padding-left: 8px !important;
+}
+
+// Only apply these styles to the timescale select value, not all ng-select values
+::ng-deep .timescale-ng-select .ng-value {
+  color: rgba(62, 64, 219, 1) !important;
+  font-family: "CircularStd-Medium", "Circular-Std", sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  display: flex !important;
+  align-items: center !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+// Style the default ng-select arrow (only for timescale)
+::ng-deep .timescale-ng-select .ng-arrow {
+  border-color: rgba(62, 64, 219, 1) transparent transparent transparent !important;
+  border-style: solid !important;
+  border-width: 5px 4px 0 4px !important;
+  opacity: 1 !important;
+  display: inline-block !important;
+}
+
+// Timescale icon spacing (right 8px, top 10.91px, bottom 9.09px, left 4px)
+::ng-deep .timescale-ng-select .ng-arrow-wrapper {
+  display: flex !important;
+  align-items: center !important;
+  padding: 10.91px 8px 9.09px 4px !important;
+  flex-shrink: 0 !important;
+  width: auto !important;
+}
 .timeline-container {
   display: flex;
   flex: 1;
   overflow: hidden;
   align-items: flex-start;
   position: relative;
+  min-height: 0; // Important for flex children to respect overflow
+  height: 100%; // Take full height of parent
 }
 
 .work-center-header {   
   padding-bottom: 8px;
-  padding-top: 8px;
+  padding-top: 8px; // Match timeline-column-header padding-top
   padding-left: 31px;
-  font-weight: 600;
-  font-size: 10px;
+  font-weight: 501;
+  font-size: 14px;
   color: #6b7280;
   border-bottom: 1px solid #e5e7eb;
   border-top: 1px solid #e5e7eb;
   border-left: 1px solid #e5e7eb;
-  width: 238px; // Updated from 200px to match sidebar width
-  background-color: rgba(250, 251, 253, 1);
+  width: 380px; 
   display: flex;
   align-items: center;
   text-transform: uppercase;
@@ -245,34 +335,46 @@
   position: sticky;
   top: 0;
   z-index: 11;
+  box-sizing: border-box; // Ensure padding is included in width
+  height: 33px;
 }
 
 .work-center-rows-container {
-  padding-top: 8px;
+  padding-top: 0; // Match timeline-rows-container padding
   display: flex;
   flex-direction: column;
   background-color: rgba(255, 255, 255, 1);
-  
-  border-left: 1px solid #f3f4f6;
-
+  border-left: 1px solid #f3f4f6; 
+  width: 380px;
+  box-sizing: border-box; // Ensure border is included in width
+  // Height calculation: first row (60px) + 4 rows (48px each) = 60 + 192 = 252px
+  height: calc(60px + 4 * 48px);
+  max-height: calc(60px + 4 * 48px); // Match timeline-rows-container height
 }
 
 .work-center-row {
-  width: 238px;
-  height: 60px;
+  width: 380px;
+  height: 48px;
   border-radius: 0;
+  background-color: rgba(255, 255, 255, 1);
   border-bottom: 1px solid #f3f4f6;
   display: flex;
   align-items: center;
-  min-height: 60px;
+  min-height: 48px;
   flex-shrink: 0;
   line-height: 1.4;
   color: rgb(3, 9, 41);
   font-size: 14px;
   font-weight: 500;
-  padding-top: 16px;
-  padding-bottom: 16px;
+  padding: 0; // Remove vertical padding to align with timeline rows
   padding-left: 31px;
+  box-sizing: border-box; // Ensure padding is included in height
+
+  // First row has 60px height
+  &:first-child {
+    height: 60px;
+    min-height: 60px;
+  }
 }
 
 .timeline-grid {
@@ -283,35 +385,40 @@
   background: #ffffff;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  align-items: flex-start; // Changed from stretch to flex-start to allow horizontal scroll
   // Ensure grid layer can position correctly
-  min-width: fit-content;
+  min-width: 0; // Allow shrinking
+  min-height: 0; // Important for flex children to respect overflow
+  height: 100%; // Take full height of parent
+  border-left: 1px solid #f3f4f6;
+  // Ensure horizontal scroll works by allowing content to extend beyond viewport
+  width: 100%;
 }
 
 // Vertical grid layer - renders column separators
 .timeline-grid-layer {
   position: absolute;
-  top: 0;
+  top: 0; // Start from the very top
   left: 0;
-  // Width will be calculated based on total columns width
-  // Using a large width to cover all columns, actual width handled by parent
-  width: 100%;
+  right: 0;
+  // Width is set dynamically via [style.width.px]="getTotalTimelineWidth()" in template
+  // This ensures it matches the total width of all columns
   bottom: 0;
   pointer-events: none;
-  z-index: 1;
-  // Ensure it covers the full height including header
-  min-height: 100%;
+  z-index: 2; // Behind cards (z-index: 5) but above background
+  // Ensure it covers the full height from top of header to bottom
+  height: 100%;
 }
 
 .timeline-column-separator {
   position: absolute;
   top: 0;
   bottom: 0;
-  background: #e5e7eb; // Primary vertical grid line color
+  left: 0;
+  width: 1px;
+  background: rgba(209, 213, 219, 0.5);
   pointer-events: none;
-  z-index: 1;
-  // Ensure lines extend full height
-  height: 100%;
+  z-index: 1; // Behind work order cards (z-index: 5)
 }
 
 .timeline-header-row {
@@ -324,18 +431,25 @@
   border-bottom: 1px solid #e5e7eb;
   flex-shrink: 0;
   align-items: stretch;
+  // Width is set dynamically via [style.width.px]="getTotalTimelineWidth()" in template
+  // Use min-width to ensure content extends beyond viewport for scrolling
+  min-width: fit-content;
+  // Ensure the header maintains its width and doesn't shrink
+  width: max-content;
+  height: auto; // Let height be determined by column headers
 }
 
 .timeline-column-header {
   position: relative;
   padding-bottom: 8px;
-  padding-top: 9px;
+  padding-top: 8px;
   padding-left: 14px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  height: 31px;
 }
 
 .column-label {
@@ -350,47 +464,33 @@
   letter-spacing: 0;
 }
 
-.current-date-indicator {
+.current-date-indicator-row {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: 0; // Pegado hasta arriba
   left: 0;
-  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: flex-start;
-  z-index: 5;
+  z-index: 6; // Above the line but below work order bars
   pointer-events: none;
-  width: 1px;
 }
 
 .current-date-label {
-  background: #dbeafe;
-  color: #1e40af;
-  padding: 1px 5px; // Tighter padding
-  border-radius: 2px;
-  font-size: 8px; // Slightly smaller
-  font-weight: 600;
+  background: rgb(212, 215, 255);
+  color: rgb(62, 64, 219);
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 400;
   white-space: nowrap;
   position: relative;
-  z-index: 6;
+  z-index: 7;
   pointer-events: auto;
   line-height: 1.2;
-  margin-top: 1px;
-  margin-bottom: 2px;
+  margin-top: 0;
+  margin-bottom: 0;
   letter-spacing: 0.03px;
-}
-
-.current-date-line {
-  width: 1px;
-  height: calc(100% - 18px);
-  background: #3b82f6;
-  position: absolute;
-  top: 18px;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
 }
 
 // Container for all timeline rows
@@ -399,36 +499,44 @@
   z-index: 2; // Above the grid layer
   display: flex;
   flex-direction: column;
+  // Width is set dynamically via [style.width.px]="getTotalTimelineWidth()" in template
+  // Use min-width to ensure content extends beyond viewport for scrolling
+  min-width: fit-content;
+  // Ensure the container maintains its width and doesn't shrink
+  width: max-content;
+  // Height calculation: first row (60px) + 4 rows (48px each) = 60 + 192 = 252px
+  height: calc(60px + 4 * 48px);
+  max-height: calc(60px + 4 * 48px); // Prevent it from growing beyond 5 rows
+  padding-top: 0; // No padding to allow card to be at the top
 }
 
 .timeline-row {
   position: relative;
-  height: 60px; // Updated from 36px to match Sketch exact value
+  height: 48px; // Default height for most rows
   // Removed border-bottom - horizontal separators are now minimal/subtle
   border-bottom: none;
   cursor: pointer;
   transition: background-color 0.15s ease;
-  background: #ffffff;
-  min-height: 60px; // Updated from 36px to match Sketch exact value
+  background-color: rgba(247, 249, 252, 1);
+  min-height: 48px; // Default min-height for most rows
   flex-shrink: 0;
   z-index: 2; // Above grid layer
+  box-sizing: border-box; // Ensure consistent sizing
+  display: flex;
+  align-items: center; // Center content vertically
 
-  // Very subtle horizontal separator - only visible on close inspection
-  // Using a very light color to make it nearly invisible
-  &:not(:last-child)::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: rgba(243, 244, 246, 0.3); // Very subtle, almost invisible
-    pointer-events: none;
-    z-index: 1;
+  // First row has 60px height and white background
+  &:first-child {
+    height: 60px;
+    min-height: 60px;
+    background-color: #ffffff;
   }
 
+  // Removed horizontal separator lines between rows
+
   &.hovered {
-    background: #f9fafb;
+    background: rgba(238, 240, 255, 1);
+
   }
 }
 
@@ -436,30 +544,47 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  background: #3b82f6;
-  z-index: 3;
+  left: 0;
+  background: rgba(222, 224, 255, 1);
+  z-index: 3; // Below work-order-bar (z-index: 5) but above background (z-index: 1-2)
   pointer-events: none;
-  width: 1px;
-  opacity: 0.8; // Slightly more visible
+  width: 2px;
+  // Position at the start (left edge) of the column, no transform needed
 }
 
 .work-order-bar {
   position: absolute;
-  top: calc((60px - 38px) / 2); // Center 38px bar in 60px row: (60-38)/2 = 11px from top
-  bottom: calc((60px - 38px) / 2); // Center 38px bar in 60px row
+  top: 50%; // Center vertically
+  transform: translateY(-50%); // Center vertically
   border-radius: 8px; // Updated from 2px to match Sketch exact value
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start; // Changed from space-between to flex-start to position status card to the right
   padding: 3px 6px;
   cursor: pointer;
-  box-shadow: 0 0 1px rgba(222, 224, 255, 1); // Updated to match Sketch exact value
-  background-color: rgba(237, 238, 255, 1); // Default background from Sketch exact value
+  // box-shadow and background-color are set dynamically via [style.box-shadow] and [style.background-color] in template
   transition: background-color 0.15s ease, box-shadow 0.15s ease;
   min-width: 80px;
   border: none;
   z-index: 5; // Above grid layer and rows
-  height: 38px; // Updated to match Sketch exact value
+  height: 38px; // Fixed height of 38px for all cards, regardless of row height
+  gap: 0; // No gap between flex items
+
+  // When bar is small, center the status card
+  &.small-bar {
+    justify-content: center;
+    padding: 3px 4px;
+    
+    .work-order-status {
+      margin-right: 0;
+      font-size: 12px;
+      padding: 2px 6px;
+    }
+    
+    .work-order-actions {
+      display: none; // Hide actions button on small bars
+    }
+  }
 
   &:hover {
     filter: brightness(0.97);
@@ -479,35 +604,38 @@
   flex: 1;
   overflow: hidden;
   min-width: 0;
+  margin-right: 8px; // Space between name and status card
+  
+  // Hide name when bar is small
+  .work-order-bar.small-bar & {
+    display: none;
+  }
 }
 
 .work-order-name {
-  font-size: 11px; // Slightly smaller for better fit
-  font-weight: 600;
-  color: #111827;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.3;
-  letter-spacing: -0.03px;
+  font-size: 14px;
+    font-weight: 400;
+    color: rgba(3, 9, 41, 1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.03px;
 }
 
 .work-order-status {
-  font-size: 8px; // Slightly smaller for compact appearance
+  font-size: 14px;
   font-weight: 600;
-  color: #ffffff;
-  padding: 1px 4px; // Reduced padding
+  padding: 2px 8px;
   border-radius: 2px;
   display: inline-block;
   width: fit-content;
-  background: rgba(0, 0, 0, 0.3); // Slightly more opaque for better contrast
   line-height: 1.2;
-  text-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.2);
+  border-radius: 5px;
   letter-spacing: 0.03px;
   white-space: nowrap;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  flex-shrink: 0; // Don't shrink the status card
+  margin-right: 4px; // Space between status and actions button
+  // Colors are set dynamically via [style.color] and [style.background-color] in template
 }
 
 .work-order-actions {
@@ -520,7 +648,7 @@
   justify-content: center;
   color: rgba(104, 113, 150, 1);
   border-radius: 3px;
-  margin-left: 4px;
+  margin-left: auto; // Push actions button to the far right
   flex-shrink: 0;
   transition: background-color 0.15s ease, opacity 0.15s ease, color 0.15s ease;
   opacity: 0;
@@ -547,57 +675,78 @@
 
 .actions-menu {
   position: fixed;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-  z-index: 1000;
-  width: 90px; // Slightly narrower
-  padding: 3px; // Slightly more padding
-  font-family: "Circular-Std", sans-serif;
+  width: 200px !important;
+  min-height: auto !important;
+  border: none !important;
+  border-radius: 5px !important;
+  background-color: rgba(255, 255, 255, 1) !important;
+  box-shadow: 
+    0 0 0 1px rgba(104, 113, 150, 0.1),
+    0 2.5px 3px -1.5px rgba(200, 207, 233, 1),
+    0 4.5px 5px -1px rgba(216, 220, 235, 1) !important;
+  margin-top: 3px !important;
+  overflow: hidden !important;
+  z-index: 1000 !important;
+  padding: 0 !important;
+  font-family: "CircularStd-Medium", "Circular-Std", sans-serif !important;
   display: flex;
+  flex-direction: column;
   flex-direction: column;
   overflow: hidden;
 }
 
 .menu-item {
   width: 100%;
-  padding: 6px 10px;
+  padding: 6px 8px !important;
   text-align: left;
   background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 12px; // Slightly smaller
-  font-weight: 400;
-  color: rgba(104, 113, 150, 1);
-  border-radius: 3px; // Consistent radius
-  transition: background-color 0.15s ease, color 0.15s ease;
-  font-family: "Circular-Std", sans-serif;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #000000 !important; // Black text for non-selected options
+  background-color: rgba(255, 255, 255, 1) !important; // White background
+  font-family: "CircularStd-Medium", "Circular-Std", sans-serif !important;
   line-height: 1.4;
   white-space: nowrap;
   display: block;
-  margin: 1px 0; // Small margin between items
-
-  &:first-child {
-    border-radius: 3px 3px 0 0;
-  }
-
-  &:last-child {
-    border-radius: 0 0 3px 3px;
-  }
+  margin: 0; // No margin between items
+  border-radius: 0; // No border radius on individual items
 
   &:hover {
-    background: #f3f4f6;
-    color: rgba(55, 65, 81, 1);
+    background-color: rgba(255, 255, 255, 1) !important;
+    color: #000000 !important;
   }
 
   &:active {
-    background: #e5e7eb;
+    background-color: rgba(255, 255, 255, 1) !important;
+    color: #000000 !important;
   }
 
   &:focus {
     outline: none;
-    background: #f3f4f6;
+    background-color: rgba(255, 255, 255, 1) !important;
+    color: #000000 !important;
+  }
+
+  // Delete option should be purple
+  &.menu-item-delete {
+    color: rgba(62, 64, 219, 1) !important; // Purple text
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 1) !important;
+      color: rgba(62, 64, 219, 1) !important;
+    }
+
+    &:active {
+      background-color: rgba(255, 255, 255, 1) !important;
+      color: rgba(62, 64, 219, 1) !important;
+    }
+
+    &:focus {
+      background-color: rgba(255, 255, 255, 1) !important;
+      color: rgba(62, 64, 219, 1) !important;
+    }
   }
 }
 
@@ -613,39 +762,35 @@
 
 .timeline-placeholder {
   position: absolute;
-  top: 2px;
-  bottom: 2px;
-  background: #e0e7ff;
-  border: 1px dashed #818cf8;
-  border-radius: 3px;
-  opacity: 0.4;
+  width: 114px;
+  height: 38px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 1px solid rgba(195, 199, 255, 1);
+  border-radius: 8px;
+  background-color: rgba(101, 112, 255, 0.1);
   pointer-events: none;
   z-index: 1;
 }
 
 .timeline-tooltip {
   position: fixed;
-  background: #374151;
-  color: #ffffff;
-  padding: 8px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
+  width: 130px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(104, 113, 150, 1);
+  color: rgba(249, 250, 255, 1);
+  font-family: "CircularStd-Book", "Circular-Std", sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px -2px rgba(200, 207, 233, 1), 0 0 16px -8px rgba(230, 235, 240, 1);
   white-space: nowrap;
-  z-index: 1000;
-  pointer-events: none;
-  transform: translateX(-50%);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-  
-  &::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 4px solid transparent;
-    border-top-color: #374151;
-  }
+  z-index: 9999;
+  pointer-events: auto;
+  transform: translate(-50%, -100%);
 }
 
 .timeline-selection-overlay {
@@ -707,7 +852,6 @@
     width: 0;
     height: 0;
     border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
     border-top: 5px solid #ffffff;
     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
   }
