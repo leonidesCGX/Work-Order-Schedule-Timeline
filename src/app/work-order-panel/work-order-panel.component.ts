@@ -115,7 +115,11 @@ export class WorkOrderPanelComponent implements OnInit, OnChanges, AfterViewInit
         this.setInitialDates();
       }
     }
-    // Update dates if startDate or endDate changes while panel is open
+    // When opening in edit mode, workOrder may arrive in same or next change — ensure form is populated
+    if (changes['workOrder'] && this.isOpen && this.mode === 'edit' && this.workOrder) {
+      this.populateForm(this.workOrder);
+    }
+    // Update dates if startDate or endDate changes while panel is open (create mode only)
     if ((changes['startDate'] || changes['endDate']) && this.isOpen && this.mode === 'create') {
       this.setInitialDates();
     }

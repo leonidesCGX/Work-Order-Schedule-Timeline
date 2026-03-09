@@ -22,8 +22,12 @@ export class AppComponent {
 
   onCreateWorkOrder(event: { workCenterId: string; startDate: Date; endDate?: Date }): void {
     this.selectedWorkCenterId = event.workCenterId;
-    this.selectedStartDate = event.startDate;
-    this.selectedEndDate = event.endDate;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    this.selectedStartDate = today;
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    this.selectedEndDate = tomorrow;
     this.panelMode = 'create';
     this.selectedWorkOrder = null;
     this.panelOpen = true;
@@ -33,6 +37,7 @@ export class AppComponent {
     this.selectedWorkOrder = order;
     this.selectedWorkCenterId = order.data.workCenterId;
     this.selectedStartDate = new Date(order.data.startDate);
+    this.selectedEndDate = new Date(order.data.endDate);
     this.panelMode = 'edit';
     this.panelOpen = true;
   }
