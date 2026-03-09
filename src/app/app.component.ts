@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { TimelineComponent } from './timeline/timeline.component';
 import { WorkOrderPanelComponent } from './work-order-panel/work-order-panel.component';
 import { WorkOrderDocument } from './models/work-order.model';
@@ -11,6 +11,8 @@ import { WorkOrderDocument } from './models/work-order.model';
   styleUrl: './app.component.scss'
 })
 export class AppComponent {
+  @ViewChild(TimelineComponent) timeline!: TimelineComponent;
+
   panelOpen = false;
   panelMode: 'create' | 'edit' = 'create';
   selectedWorkCenterId = '';
@@ -43,5 +45,7 @@ export class AppComponent {
   onPanelSave(): void {
     this.panelOpen = false;
     this.selectedWorkOrder = null;
+    // Recenter timeline on current day/week/month/hour after create or edit
+    setTimeout(() => this.timeline?.scrollToCurrentDate(), 150);
   }
 }

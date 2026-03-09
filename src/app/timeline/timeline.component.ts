@@ -638,7 +638,8 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  private scrollToCurrentDate(): void {
+  /** Public so parent can call after create/edit/delete to recenter on current date. */
+  scrollToCurrentDate(): void {
     if (!this.timelineGrid?.nativeElement) return;
 
     const currentDatePos = this.calculateDatePosition(
@@ -1049,6 +1050,7 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
     this.showActionsMenu = null;
     if (confirm(`Are you sure you want to delete "${order.data.name}"?`)) {
       this.workOrderService.deleteWorkOrder(order.docId);
+      setTimeout(() => this.scrollToCurrentDate(), 100);
     }
   }
 
