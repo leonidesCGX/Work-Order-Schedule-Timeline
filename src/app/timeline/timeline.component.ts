@@ -682,9 +682,12 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
 
-    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    const clickX = event.clientX - rect.left;
-    const scrollLeft = this.timelineGrid?.nativeElement?.scrollLeft || 0;
+    const gridEl = this.timelineGrid?.nativeElement;
+    if (!gridEl) return;
+
+    const gridRect = gridEl.getBoundingClientRect();
+    const scrollLeft = gridEl.scrollLeft || 0;
+    const clickX = event.clientX - gridRect.left;
     const absoluteX = clickX + scrollLeft;
 
     const columnWidth = this.getColumnWidth();
@@ -710,8 +713,7 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
         this.hoveredCellLeaveTimer = null;
       }
       const columnCenterX = columnStartX + columnWidth / 2;
-      const gridRect = this.timelineGrid?.nativeElement?.getBoundingClientRect();
-      const tooltipLeft = gridRect ? gridRect.left + (columnCenterX - scrollLeft) : event.clientX;
+      const tooltipLeft = gridRect.left + (columnCenterX - scrollLeft);
       const tooltipTop = event.clientY - 38;
       this.hoveredTimelineCell = {
         workCenterIndex,
@@ -719,6 +721,7 @@ export class TimelineComponent implements OnInit, OnDestroy, AfterViewInit {
         tooltipLeft,
         tooltipTop
       };
+      this.cdr.detectChanges();
     } else {
       this.hoveredTimelineCell = null;
     }
