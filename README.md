@@ -32,7 +32,7 @@ A comprehensive Angular 17+ application for managing work orders across multiple
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/leonidesCGX/Work-Order-Schedule-Timeline
 cd work-order-timeline
 ```
 
